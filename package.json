@@ -7,14 +7,16 @@
     "build": "npx webpack --mode production",
     "build:dev": "npx webpack --mode development",
     "build:watch": "npx webpack --mode development --watch",
-    "start": "browser-sync start -s -f *"
+    "start": "browser-sync start --no-open -s ./dist -f *"
   },
   "author": "SardineFish",
   "license": "MIT",
   "dependencies": {
-    "zogra-renderer": "file://./zogra-renderer"
+    "zogra-renderer": "file:///./zogra-renderer"
   },
   "devDependencies": {
+    "file-loader": "^6.2.0",
+    "raw-loader": "^4.0.2",
     "ts-loader": "^8.0.14",
     "typescript": "^4.1.3",
     "webpack": "^4.46.0",
