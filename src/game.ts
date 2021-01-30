@@ -6,6 +6,7 @@ import textureImage from "../assets/texture/tex.png";
 import checkboardImage from "../assets/texture/checkboard.png";
 import { Tilemap } from "./tilemap/tilemap";
 import { TilemapMaterial } from "./material/tilemap";
+import { MapGenerator } from "./map/map-generator";
 
 export async function start(engine: ZograEngine)
 {
@@ -14,7 +15,7 @@ export async function start(engine: ZograEngine)
     const camera = new Camera();
     camera.position = vec3(0, 0, 1);
     camera.projection = Projection.Orthographic;
-    camera.viewHeight = 5;
+    camera.viewHeight = 29;
 
     engine.scene.add(camera);
 
@@ -37,6 +38,8 @@ export async function start(engine: ZograEngine)
     (tilemap.materials[0] as TilemapMaterial).texture = checkboard;
     (tilemap.materials[0] as TilemapMaterial).atlasSize = vec2(4, 4);
 
+    const generator = new MapGenerator(tilemap);    
+
 
     let count = 0;
     engine.on("update", () =>
@@ -54,8 +57,18 @@ export async function start(engine: ZograEngine)
                 texture_offset: uv.clone()
             });
 
-        } 
+        }
+
+        const [chunkMin, chunkMax] = tilemap.visibleChunkRange(camera);
+        for (let y = chunkMin.y; y < chunkMax.y; y++)
+        {
+            for (let x = chunkMin.x; x < chunkMax.x; x++)
+            { 
+                generator.generateChunk(vec2(x, y));
+            }
+        }
     });
+    generator.generateChunk(vec2(0, 0));
 
 
     engine.scene.add(entity);

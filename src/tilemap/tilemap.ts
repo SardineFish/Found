@@ -1,4 +1,4 @@
-import { div, mat4, Mesh, MeshBuilder, minus, plus, RenderContext, RenderData, RenderObject, vec2, vec3, Vector2 } from "zogra-renderer";
+import { Camera, div, mat4, Mesh, MeshBuilder, minus, plus, RenderContext, RenderData, RenderObject, vec2, vec3, Vector2 } from "zogra-renderer";
 import { TilemapMaterial } from "../material/tilemap";
 import { floor2, floorReminder } from "../utils/math";
 
@@ -47,9 +47,17 @@ export class Tilemap extends RenderObject
         return chunk.setTile(offset, tile);
     }
 
+    visibleChunkRange(camera: Camera): [vec2, vec2]
+    {
+        let screenSize = vec2(camera.viewHeight * camera.aspectRatio, camera.viewHeight);
+        let [minCorner] = this.chunkPos(minus(camera.position.toVec2(), screenSize));
+        let [maxCorner] = this.chunkPos(plus(camera.position.toVec2(), screenSize));
+        return [minCorner, plus(maxCorner, 1)];
+    }
+
     private getOrCreateChunk(chunkPos: Vector2): Chunk
     {
-        const idx = Math.floor(chunkPos.x) << 16 | Math.floor(chunkPos.y);
+        const idx = Chunk.chunkID(chunkPos);
         let chunk = this.chunks.get(idx);
         if (!chunk)
         {
@@ -62,15 +70,15 @@ export class Tilemap extends RenderObject
 
     private getChunk(chunkPos: Vector2): Chunk | undefined
     {
-        const idx = Math.floor(chunkPos.x) << 16 | Math.floor(chunkPos.y);
+        const idx = Chunk.chunkID(chunkPos);
         return this.chunks.get(idx);
     }
 
     private chunkPos(pos: Vector2): [Vector2, Vector2]
     {
         const floorOffset = vec2(
-            pos.x < 0 ? 1 : 0,
-            pos.y < 0 ? 1 : 0,
+            pos.x < 0 ? /*1*/ 0 : 0,
+            pos.y < 0 ? /*1*/ 0 : 0,
         );
         return [minus(floor2(div(pos, vec2(ChunkSize, ChunkSize))), floorOffset), vec2(
             floorReminder(pos.x, ChunkSize),
@@ -81,7 +89,7 @@ export class Tilemap extends RenderObject
     
 }
 
-class Chunk
+export class Chunk
 {
     tiles: Array<TileData | null> = new Array(ChunkSize * ChunkSize)
     mesh: Mesh = createChunkMesh();
@@ -114,6 +122,17 @@ class Chunk
         uv2[idx + 2] = atlas_offset;
         uv2[idx + 3] = atlas_offset;
         this.mesh.uv2 = uv2;
+    }
+
+    static chunkID(chunkPos: vec2)
+    {
+        if (chunkPos.x == -0)
+            chunkPos.x = 0;
+        if (chunkPos.y == -0)
+            chunkPos.y = 0;
+        const signX = chunkPos.x >= 0 ? 0 : 1;
+        const signY = chunkPos.y >= 0 ? 0 : 1;
+        return (signX << 34) | (Math.abs(Math.floor(chunkPos.x)) << 17) | (signY << 16) | Math.abs(Math.floor(chunkPos.y));
     }
 }
 

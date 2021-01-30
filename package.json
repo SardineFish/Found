@@ -12,6 +12,7 @@
   "author": "SardineFish",
   "license": "MIT",
   "dependencies": {
+    "perlin-simplex": "0.0.3",
     "zogra-renderer": "file:///./zogra-renderer"
   },
   "devDependencies": {
