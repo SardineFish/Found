@@ -144,16 +144,17 @@ export interface TileData
 
 function createChunkMesh()
 {
-    const builder = new MeshBuilder()
+    const builder = new MeshBuilder();
+    const epsilon = 0.005;
     for (let y = 0; y < ChunkSize; y++)
         for (let x = 0; x < ChunkSize; x++)
         {
             builder.addPolygon(
                 [
-                    vec3(x, y, 0),
-                    vec3(x + 1, y, 0),
-                    vec3(x + 1, y + 1, 0),
-                    vec3(x, y + 1, 0),
+                    vec3(x - epsilon, y - epsilon, 0),
+                    vec3(x + 1 + epsilon, y - epsilon, 0),
+                    vec3(x + 1 + epsilon, y + 1 + epsilon, 0),
+                    vec3(x - epsilon, y + 1 + epsilon, 0),
                 ],
                 [
                     vec2(0, 0),

@@ -7,15 +7,17 @@ import checkboardImage from "../assets/texture/checkboard.png";
 import { Tilemap } from "./tilemap/tilemap";
 import { TilemapMaterial } from "./material/tilemap";
 import { MapGenerator } from "./map/map-generator";
+import { Rigidbody } from "./gameplay/rigidbody";
+import { Player } from "./gameplay/player";
 
 export async function start(engine: ZograEngine)
 {
     const input = new InputManager();
 
     const camera = new Camera();
-    camera.position = vec3(0, 0, 1);
+    camera.position = vec3(0, 0, 10);
     camera.projection = Projection.Orthographic;
-    camera.viewHeight = 29;
+    camera.viewHeight = 10;
 
     engine.scene.add(camera);
 
@@ -40,6 +42,9 @@ export async function start(engine: ZograEngine)
 
     const generator = new MapGenerator(tilemap);    
 
+    let player = new Player(input);
+    engine.scene.add(player);
+    camera.parent = player;
 
     let count = 0;
     engine.on("update", () =>
