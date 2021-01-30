@@ -4,14 +4,15 @@ import { Rigidbody } from "./rigidbody";
 import playerImage from "../../assets/texture/tex.png";
 import { loadImage } from "../utils/load-image";
 import { makeQuad } from "../utils/mesh";
+import { Tilemap } from "../tilemap/tilemap";
 
 export class Player extends Rigidbody
 {
     moveSpeed = 5;
     input: InputManager;
-    constructor(input: InputManager)
+    constructor(input: InputManager, tilemap: Tilemap)
     {
-        super();
+        super(tilemap);
         this.input = input;
         this.on("update", this.update.bind(this));
 
@@ -41,6 +42,11 @@ export class Player extends Rigidbody
             moveInput.x -= 1;
         if (this.input.getKey(Keys.D))
             moveInput.x += 1;
+        
+        if (this.input.getKeyDown(Keys.F2))
+        {
+            const x = 1;
+        }
         moveInput.normalize();
         this.velocity = mul(moveInput, this.moveSpeed);
     }

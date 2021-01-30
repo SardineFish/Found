@@ -42,7 +42,7 @@ export async function start(engine: ZograEngine)
 
     const generator = new MapGenerator(tilemap);    
 
-    let player = new Player(input);
+    let player = new Player(input, tilemap);
     engine.scene.add(player);
     camera.parent = player;
 
