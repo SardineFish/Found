@@ -9,10 +9,18 @@ canvas.height = rect.height;
 const engine = new ZograEngine(canvas);
 engine.start();
 
+
 import { RenderPipeline } from "./rendering/render-pipeline";
 import { start } from "./game";
+import { GameSession } from "./network/session";
 
-const renderPipeline = new RenderPipeline();
-engine.renderPipeline = renderPipeline;
-initDebugLyaerRenderer(renderPipeline.debuglayer);
-start(engine);
+
+const session = new GameSession("ws://192.168.199.167:5000/", "User");
+
+session.onStart = () =>
+{
+    const renderPipeline = new RenderPipeline();
+    engine.renderPipeline = renderPipeline;
+    initDebugLyaerRenderer(renderPipeline.debuglayer);
+    start(engine, session);
+}

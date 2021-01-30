@@ -5,15 +5,20 @@ import playerImage from "../../assets/texture/tex.png";
 import { loadImage } from "../utils/load-image";
 import { makeQuad } from "../utils/mesh";
 import { Tilemap } from "../tilemap/tilemap";
+import { GameSession } from "../network/session";
 
 export class Player extends Rigidbody
 {
     moveSpeed = 5;
     input: InputManager;
-    constructor(input: InputManager, tilemap: Tilemap)
+    session: GameSession;
+
+    constructor(input: InputManager, tilemap: Tilemap, session: GameSession)
     {
         super(tilemap);
         this.input = input;
+        this.session = session;
+
         this.on("update", this.update.bind(this));
 
         this.init();
@@ -33,6 +38,7 @@ export class Player extends Rigidbody
 
     private update(entity: Entity, time: Time)
     {
+
         const moveInput = vec2.zero();
         if (this.input.getKey(Keys.W))
             moveInput.y += 1;
@@ -49,5 +55,11 @@ export class Player extends Rigidbody
         }
         moveInput.normalize();
         this.velocity = mul(moveInput, this.moveSpeed);
+        
+
+        this.session.sendSync({
+            pos: this.position,
+            velocity: this.velocity
+        });
     }
 }

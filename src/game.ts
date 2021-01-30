@@ -10,8 +10,10 @@ import { MapGenerator } from "./map/map-generator";
 import { Rigidbody } from "./gameplay/rigidbody";
 import { Player } from "./gameplay/player";
 import { Light2D } from "./gameplay/light";
+import { GameSession } from "./network/session";
+import { NetworkPlayer } from "./gameplay/network-player";
 
-export async function start(engine: ZograEngine)
+export async function start(engine: ZograEngine, session: GameSession)
 {
     const input = new InputManager();
 
@@ -43,9 +45,12 @@ export async function start(engine: ZograEngine)
 
     const generator = new MapGenerator(tilemap);    
 
-    let player = new Player(input, tilemap);
+    let player = new Player(input, tilemap, session);
     engine.scene.add(player);
     camera.parent = player;
+
+    let remotePlayer = new NetworkPlayer(session);
+    engine.scene.add(remotePlayer);
 
     let light = new Light2D();
     engine.scene.add(light, player);

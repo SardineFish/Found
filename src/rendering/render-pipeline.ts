@@ -60,7 +60,7 @@ export class RenderPipeline implements ZograRenderPipeline
             }
         }
 
-        this.renderLight(context, data);
+        // this.renderLight(context, data);
 
         this.debuglayer.render(context, data);
         camera.__postRender(context);
