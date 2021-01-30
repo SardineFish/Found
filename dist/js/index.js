@@ -872,7 +872,7 @@ engine.start();
 const render_pipeline_1 = __webpack_require__(/*! ./rendering/render-pipeline */ "./src/rendering/render-pipeline.ts");
 const game_1 = __webpack_require__(/*! ./game */ "./src/game.ts");
 const session_1 = __webpack_require__(/*! ./network/session */ "./src/network/session.ts");
-const session = new session_1.GameSession("ws://192.168.199.167:5000/", "User");
+const session = new session_1.GameSession("ws://found.sardinefish.com/ws", "User");
 session.onStart = () => {
     const renderPipeline = new render_pipeline_1.RenderPipeline();
     engine.renderPipeline = renderPipeline;

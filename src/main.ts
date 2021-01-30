@@ -15,7 +15,7 @@ import { start } from "./game";
 import { GameSession } from "./network/session";
 
 
-const session = new GameSession("ws://192.168.199.167:5000/", "User");
+const session = new GameSession("ws://found.sardinefish.com/ws", "User");
 
 session.onStart = () =>
 {
