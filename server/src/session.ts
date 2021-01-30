@@ -16,15 +16,22 @@ export class GameSession
         this.playerA = playerA;
         this.playerB = playerB;
         this.seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+        try
+        {
 
-        this.playerA.socket.on("message", this.playerAMsg.bind(this));
-        this.playerB.socket.on("message", this.playerBMsg.bind(this));
+            this.playerA.socket.on("message", this.playerAMsg.bind(this));
+            this.playerB.socket.on("message", this.playerBMsg.bind(this));
+        }
+        catch (err)
+        {
+            console.error(err);
+        }
     }
 
     playerAMsg(data: WebSocket.Data)
     {
         let obj = JSON.parse(data as string) as IncomeMessage;
-        this.playerB.socket.send(<OutcomeMessage>{
+        this.playerB.send(<OutcomeMessage>{
             type: obj.type,
             data: obj.data,
         });
@@ -33,7 +40,7 @@ export class GameSession
     playerBMsg(data: WebSocket.Data)
     {
         let obj = JSON.parse(data as string) as IncomeMessage;
-        this.playerA.socket.send(<OutcomeMessage>{
+        this.playerA.send(<OutcomeMessage>{
             type: obj.type,
             data: obj.data,
         });
@@ -62,8 +69,8 @@ export class GameSession
             }
         }
 
-        this.playerA.socket.send(JSON.stringify(startA));
-        this.playerB.socket.send(JSON.stringify(startB));
-        
+        this.playerA.send(startA);
+        this.playerB.send(startB);
+
     }
 }

@@ -9,11 +9,13 @@ const pendingQueue = new Queue<Player>(32);
 
 const server = new WebSocket.Server({
     port: 5000,
+    host: "0.0.0.0",
     backlog: 1,
 });
 
 server.on("connection", (socket) =>
 {
+    console.log("Client connected");
     socket.once("message", (data: WebSocket.Data) =>
     {
         const msg = JSON.parse(data as string) as IncomeMessage;

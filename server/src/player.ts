@@ -11,4 +11,16 @@ export class Player
         this.id = uuid();
         this.socket = socket;
     }
+
+    send<T>(obj: T)
+    {
+        try
+        {
+            this.socket.send(JSON.stringify(obj));
+        }
+        catch (err)
+        {
+            console.error(err);
+        }
+    }
 }
