@@ -9,6 +9,7 @@ import { TilemapMaterial } from "./material/tilemap";
 import { MapGenerator } from "./map/map-generator";
 import { Rigidbody } from "./gameplay/rigidbody";
 import { Player } from "./gameplay/player";
+import { Light2D } from "./gameplay/light";
 
 export async function start(engine: ZograEngine)
 {
@@ -45,6 +46,10 @@ export async function start(engine: ZograEngine)
     let player = new Player(input, tilemap);
     engine.scene.add(player);
     camera.parent = player;
+
+    let light = new Light2D();
+    engine.scene.add(light, player);
+    light.size = 8;
 
     let count = 0;
     engine.on("update", () =>
