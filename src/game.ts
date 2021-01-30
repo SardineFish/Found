@@ -12,6 +12,7 @@ import { Player } from "./gameplay/player";
 import { Light2D } from "./gameplay/light";
 import { GameSession } from "./network/session";
 import { NetworkPlayer } from "./gameplay/network-player";
+import { initGlobalEntities, loadAssets } from "./gameplay/global";
 
 export async function start(engine: ZograEngine, session: GameSession)
 {
@@ -20,7 +21,7 @@ export async function start(engine: ZograEngine, session: GameSession)
     const camera = new Camera();
     camera.position = vec3(0, 0, 10);
     camera.projection = Projection.Orthographic;
-    camera.viewHeight = 10;
+    camera.viewHeight = 20;
 
     engine.scene.add(camera);
 
@@ -35,6 +36,7 @@ export async function start(engine: ZograEngine, session: GameSession)
     mat.texture = texture;
 
     entity.materials[0] = mat;
+    engine.scene.add(entity);
 
     let tilemap = new Tilemap();
     engine.scene.add(tilemap);
@@ -43,7 +45,7 @@ export async function start(engine: ZograEngine, session: GameSession)
     (tilemap.materials[0] as TilemapMaterial).texture = checkboard;
     (tilemap.materials[0] as TilemapMaterial).atlasSize = vec2(4, 4);
 
-    const generator = new MapGenerator(tilemap);    
+    const generator = new MapGenerator(tilemap, session.seed);    
 
     let player = new Player(input, tilemap, session);
     engine.scene.add(player);
@@ -74,17 +76,19 @@ export async function start(engine: ZograEngine, session: GameSession)
 
         }
 
-        const [chunkMin, chunkMax] = tilemap.visibleChunkRange(camera);
-        for (let y = chunkMin.y; y < chunkMax.y; y++)
-        {
-            for (let x = chunkMin.x; x < chunkMax.x; x++)
-            { 
-                generator.generateChunk(vec2(x, y));
-            }
-        }
+        generator.update();
     });
-    generator.generateChunk(vec2(0, 0));
 
+    initGlobalEntities({
+        scene: engine.scene,
+        engine,
+        camera,
+        mapGenerator: generator,
+        player,
+        remotePlayer,
+        tilemap,
+        assets: await loadAssets()
+    });
 
-    engine.scene.add(entity);
+    engine.start();
 }

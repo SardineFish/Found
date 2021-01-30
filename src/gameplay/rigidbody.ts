@@ -103,7 +103,8 @@ export class Rigidbody extends RenderObject
 
     private isColliderTile(pos: vec2): boolean
     {
-        const tile = this.tilemap.getTile(pos);
-        return tile ? tile.collide : false;
+        return false;
+        // const tile = this.tilemap.getTile(pos);
+        // return tile ? tile.collide : false;
     }
 }

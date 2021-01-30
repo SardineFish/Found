@@ -25,7 +25,7 @@ export interface JoinData
 
 export interface StartData
 {
-    seed: number;
+    seed: string;
     spawn: [number, number];
 }
 

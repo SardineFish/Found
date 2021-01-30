@@ -12,10 +12,14 @@
   "author": "SardineFish",
   "license": "MIT",
   "dependencies": {
+    "noisejs": "^2.1.0",
     "perlin-simplex": "0.0.3",
+    "seedrandom": "^3.0.5",
     "zogra-renderer": "file:///./zogra-renderer"
   },
   "devDependencies": {
+    "@types/noisejs": "0.0.28",
+    "@types/seedrandom": "^2.4.28",
     "file-loader": "^6.2.0",
     "raw-loader": "^4.0.2",
     "ts-loader": "^8.0.14",

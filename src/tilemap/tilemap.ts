@@ -1,5 +1,6 @@
 import { Camera, div, mat4, Mesh, MeshBuilder, minus, plus, RenderContext, RenderData, RenderObject, vec2, vec3, Vector2 } from "zogra-renderer";
 import { TilemapMaterial } from "../material/tilemap";
+import { calcChunkID } from "../utils/chunk-id";
 import { floor2, floorReminder } from "../utils/math";
 
 const ChunkSize = 16;
@@ -57,7 +58,7 @@ export class Tilemap extends RenderObject
 
     private getOrCreateChunk(chunkPos: Vector2): Chunk
     {
-        const idx = Chunk.chunkID(chunkPos);
+        const idx = calcChunkID(chunkPos);
         let chunk = this.chunks.get(idx);
         if (!chunk)
         {
@@ -70,7 +71,7 @@ export class Tilemap extends RenderObject
 
     private getChunk(chunkPos: Vector2): Chunk | undefined
     {
-        const idx = Chunk.chunkID(chunkPos);
+        const idx = calcChunkID(chunkPos);
         return this.chunks.get(idx);
     }
 
@@ -122,17 +123,6 @@ export class Chunk
         uv2[idx + 2] = atlas_offset;
         uv2[idx + 3] = atlas_offset;
         this.mesh.uv2 = uv2;
-    }
-
-    static chunkID(chunkPos: vec2)
-    {
-        if (chunkPos.x == -0)
-            chunkPos.x = 0;
-        if (chunkPos.y == -0)
-            chunkPos.y = 0;
-        const signX = chunkPos.x >= 0 ? 0 : 1;
-        const signY = chunkPos.y >= 0 ? 0 : 1;
-        return (signX << 34) | (Math.abs(Math.floor(chunkPos.x)) << 17) | (signY << 16) | Math.abs(Math.floor(chunkPos.y));
     }
 }
 

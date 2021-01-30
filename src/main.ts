@@ -7,7 +7,7 @@ let rect = canvas.getBoundingClientRect();
 canvas.width = rect.width;
 canvas.height = rect.height;
 const engine = new ZograEngine(canvas);
-engine.start();
+// engine.start();
 
 
 import { RenderPipeline } from "./rendering/render-pipeline";

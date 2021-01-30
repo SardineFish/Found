@@ -5,6 +5,7 @@ export class GameSession
     id: string = "";
     socket: WebSocket;
     name: string;
+    seed: string = "seed";
     onError: (err: Error) => void = () => { };
     onSync: (data: SyncData) => void = () => { };
     onStart: (data: StartData) => void = () => { };
@@ -35,6 +36,7 @@ export class GameSession
                 break;
             case MessageType.Start:
                 this.socket.onmessage = this.serverSync.bind(this);
+                this.seed = (msg.data as StartData).seed;
                 this.onStart(msg.data as StartData);
                 break;
             default:
