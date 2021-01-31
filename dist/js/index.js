@@ -8936,8 +8936,6 @@ class FlashLight extends light_1.Light2D {
         super();
         this.enable = false;
     }
-    set direction(dir) {
-    }
 }
 exports.FlashLight = FlashLight;
 
@@ -9022,6 +9020,7 @@ const mesh_1 = __webpack_require__(/*! ../utils/mesh */ "./src/utils/mesh.ts");
 class Light2D extends zogra_renderer_1.Entity {
     constructor() {
         super(...arguments);
+        this.enable = true;
         this.mesh = mesh_1.makeQuad();
         this.material = new _2d_light_1.ProceduralLightMaterial();
         this._size = 4;
@@ -9030,6 +9029,18 @@ class Light2D extends zogra_renderer_1.Entity {
     set size(size) {
         this._size = size;
         this.localScaling = zogra_renderer_1.vec3(size, size, size);
+    }
+    get direction() {
+        return this.material.lightDirection;
+    }
+    set direction(dir) {
+        this.material.lightDirection = dir;
+    }
+    get halfAngle() {
+        return this.material.lightAngle;
+    }
+    set halfAngle(rad) {
+        this.material.lightAngle = rad;
     }
 }
 exports.Light2D = Light2D;
@@ -9191,11 +9202,12 @@ class Player extends rigidbody_1.Rigidbody {
         this.tools = [{ type: map_generator_1.ItemType.None, count: 0, endure: 1 }];
         this.currentToolIdx = 0;
         this.facing = zogra_renderer_1.vec2.down();
-        this.flashlightOn = false;
-        this.flashlightDir = zogra_renderer_1.vec2.up();
+        this.flashlightTool = null;
         this.input = input;
         this.session = session;
         this.flashlight = new flashlight_1.FlashLight();
+        this.flashlight.size = 30;
+        this.flashlight.halfAngle = Math.PI / 6;
         scene.add(this.flashlight, this);
         this.on("update", this.update.bind(this));
         this.init();
@@ -9230,6 +9242,7 @@ class Player extends rigidbody_1.Rigidbody {
             this.facing = zogra_renderer_1.vec2.left();
         if (this.input.getKeyDown(zogra_renderer_1.Keys.D) || this.input.getKeyDown(zogra_renderer_1.Keys.Right))
             this.facing = zogra_renderer_1.vec2.right();
+        const mousePos = global_1.Global().camera.screenToWorld(this.input.pointerPosition).toVec2();
         if (this.input.getKeyDown(zogra_renderer_1.Keys.F2)) {
             const x = 1;
         }
@@ -9238,8 +9251,8 @@ class Player extends rigidbody_1.Rigidbody {
         this.session.sendSync({
             pos: this.position.toVec2(),
             velocity: this.velocity,
-            flashlight: this.flashlightOn,
-            flashlightDir: this.flashlightDir,
+            flashlight: this.flashlight.enable,
+            flashlightDir: this.flashlight.direction,
         });
         if (this.input.getKeyDown(zogra_renderer_1.Keys.C)) {
             this.craft();
@@ -9260,6 +9273,11 @@ class Player extends rigidbody_1.Rigidbody {
             this.currentToolIdx = (this.currentToolIdx - 1 + this.tools.length) % this.tools.length;
             tools_1.updateTools(this.tools, this.currentToolIdx);
         }
+        if (this.flashlight.enable) {
+            const lifetime = 20; // seconds
+            this.flashlight.enable = this.reduceEndure(map_generator_1.ItemType.Flashlight, 1 / lifetime * time.deltaTime);
+        }
+        this.flashlight.direction = zogra_renderer_1.minus(mousePos, this.position.toVec2()).normalized;
     }
     craft() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -9279,6 +9297,30 @@ class Player extends rigidbody_1.Rigidbody {
                     break;
             }
         });
+    }
+    reduceEndure(type, amount) {
+        for (const tool of this.tools) {
+            if (tool.type == type) {
+                tool.endure -= amount;
+                if (tool.endure <= 0) {
+                    tool.count--;
+                    if (tool.count <= 0) {
+                        this.tools = this.tools.filter(t => t !== tool);
+                        this.currentToolIdx %= this.tools.length;
+                        tools_1.updateTools(this.tools, this.currentToolIdx);
+                        log_1.showLog(`[${map_generator_1.ItemName[tool.type]}] 用完惹...`);
+                        return false;
+                    }
+                    else {
+                        log_1.showLog(`消耗 [${map_generator_1.ItemName[tool.type]}] x1`);
+                        tool.endure = 1;
+                    }
+                }
+                tools_1.updateTools(this.tools, this.currentToolIdx);
+                return true;
+            }
+        }
+        return false;
     }
     getTool(type) {
         for (const tool of this.tools) {
@@ -9329,6 +9371,9 @@ class Player extends rigidbody_1.Rigidbody {
                 use(tool);
                 break;
             case map_generator_1.ItemType.Pickaxe:
+                break;
+            case map_generator_1.ItemType.Flashlight:
+                this.flashlight.enable = !this.flashlight.enable;
                 break;
         }
     }
@@ -9759,7 +9804,18 @@ let ProceduralLightMaterial = class ProceduralLightMaterial extends zogra_render
     blend: [zogra_renderer_1.Blending.One, zogra_renderer_1.Blending.One],
     zWrite: false,
 })) {
+    constructor() {
+        super(...arguments);
+        this.lightDirection = zogra_renderer_1.vec2.up();
+        this.lightAngle = Math.PI;
+    }
 };
+__decorate([
+    zogra_renderer_1.shaderProp("uLightDirection", "vec2")
+], ProceduralLightMaterial.prototype, "lightDirection", void 0);
+__decorate([
+    zogra_renderer_1.shaderProp("uLightAngle", "float")
+], ProceduralLightMaterial.prototype, "lightAngle", void 0);
 ProceduralLightMaterial = __decorate([
     zogra_renderer_1.materialDefine
 ], ProceduralLightMaterial);
@@ -10050,6 +10106,8 @@ class RenderPipeline {
         context.renderer.setRenderTarget(this.lightmap);
         context.renderer.clear(zogra_renderer_1.Color.black);
         for (const light of lights) {
+            if (!light.enable)
+                continue;
             context.renderer.drawMesh(light.mesh, light.localToWorldMatrix, light.material);
         }
         context.renderer.setRenderTarget(render_target_1.RenderTarget.CanvasTarget);
@@ -10125,7 +10183,7 @@ module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vCo
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vColor;\r\nin vec4 vPos;\r\nin vec2 vUV;\r\n\r\nuniform sampler2D uMainTex;\r\nuniform vec4 uColor;\r\n\r\nout vec4 fragColor;\r\n\r\nvoid main()\r\n{\r\n    vec2 uv = (vUV - vec2(0.5)) * vec2(2);\r\n    float r = length(uv);\r\n    float light = pow(max(1.0 - r, 0.0), 2.0);\r\n    vec3 color = texture(uMainTex, vUV.xy).rgb;\r\n    // color = color * vec3(uColor);\r\n    fragColor = vec4(light, light, light, 1.0);\r\n}";
+module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vColor;\r\nin vec4 vPos;\r\nin vec2 vUV;\r\n\r\nuniform sampler2D uMainTex;\r\nuniform vec4 uColor;\r\nuniform vec2 uLightDirection;\r\nuniform float uLightAngle;\r\n\r\nout vec4 fragColor;\r\n\r\nvoid main()\r\n{\r\n    vec2 uv = (vUV - vec2(0.5)) * vec2(2);\r\n    if(dot(normalize(uv), uLightDirection) < cos(uLightAngle))\r\n    {\r\n        fragColor = vec4(0, 0, 0, 1.0);\r\n        return;\r\n    }\r\n    float r = length(uv);\r\n    float light = pow(max(1.0 - r, 0.0), 2.0);\r\n    vec3 color = texture(uMainTex, vUV.xy).rgb;\r\n    // color = color * vec3(uColor);\r\n    fragColor = vec4(light, light, light, 1.0);\r\n}\r\n";
 
 /***/ }),
 

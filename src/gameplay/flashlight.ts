@@ -8,9 +8,4 @@ export class FlashLight extends Light2D
     {
         super();
     }
-
-    set direction(dir: vec2)
-    {
-
-    }
 }

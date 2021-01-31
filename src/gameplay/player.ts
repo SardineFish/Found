@@ -33,8 +33,7 @@ export class Player extends Rigidbody
     currentToolIdx: number = 0;
     facing: vec2 = vec2.down();
     flashlight: FlashLight;
-    flashlightOn: boolean = false;
-    flashlightDir: vec2 = vec2.up();
+    flashlightTool: Tool | null = null;
 
     constructor(scene: Scene, input: InputManager, tilemap: Tilemap, session: GameSession)
     {
@@ -42,6 +41,8 @@ export class Player extends Rigidbody
         this.input = input;
         this.session = session;
         this.flashlight = new FlashLight();
+        this.flashlight.size = 30;
+        this.flashlight.halfAngle = Math.PI / 6;
         scene.add(this.flashlight, this);
 
         this.on("update", this.update.bind(this));
@@ -83,6 +84,8 @@ export class Player extends Rigidbody
             this.facing = vec2.left();
         if (this.input.getKeyDown(Keys.D) || this.input.getKeyDown(Keys.Right))
             this.facing = vec2.right();
+
+        const mousePos = Global().camera.screenToWorld(this.input.pointerPosition).toVec2();
         
         if (this.input.getKeyDown(Keys.F2))
         {
@@ -95,8 +98,8 @@ export class Player extends Rigidbody
         this.session.sendSync({
             pos: this.position.toVec2() as number[] as [number, number],
             velocity: this.velocity as number[] as [number, number],
-            flashlight: this.flashlightOn,
-            flashlightDir: this.flashlightDir as number[] as [number, number],
+            flashlight: this.flashlight.enable,
+            flashlightDir: this.flashlight.direction as number[] as [number, number],
         });
 
         if (this.input.getKeyDown(Keys.C))
@@ -123,6 +126,13 @@ export class Player extends Rigidbody
             this.currentToolIdx = (this.currentToolIdx - 1 + this.tools.length) % this.tools.length;
             updateToolsUI(this.tools, this.currentToolIdx);
         }
+
+        if (this.flashlight.enable)
+        {
+            const lifetime = 20; // seconds
+            this.flashlight.enable = this.reduceEndure(ItemType.Flashlight, 1 / lifetime * time.deltaTime);
+        }
+        this.flashlight.direction = minus(mousePos, this.position.toVec2()).normalized;
     }
 
     async craft()
@@ -143,6 +153,37 @@ export class Player extends Rigidbody
                 this.addTool(ItemType.Radio);
                 break;
         }
+    }
+
+    private reduceEndure(type: ItemType, amount: number): boolean
+    {
+        for (const tool of this.tools)
+        {
+            if (tool.type == type)
+            {
+                tool.endure -= amount;
+                if (tool.endure <= 0)
+                {
+                    tool.count--;
+                    if (tool.count <= 0)
+                    {
+                        this.tools = this.tools.filter(t => t !== tool);
+                        this.currentToolIdx %= this.tools.length;
+                        updateToolsUI(this.tools, this.currentToolIdx);
+                        showLog(`[${ItemName[tool.type]}] 用完惹...`);
+                        return false;
+                    }
+                    else
+                    {
+                        showLog(`消耗 [${ItemName[tool.type]}] x1`);
+                        tool.endure = 1;
+                    }
+                }
+                updateToolsUI(this.tools, this.currentToolIdx);
+                return true;
+            }
+        }
+        return false;
     }
 
     private getTool(type: ItemType)
@@ -209,6 +250,9 @@ export class Player extends Rigidbody
                 use(tool);
                 break;
             case ItemType.Pickaxe:
+                break;
+            case ItemType.Flashlight:
+                this.flashlight.enable = !this.flashlight.enable;
                 break;
         }
     }

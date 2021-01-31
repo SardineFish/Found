@@ -74,6 +74,8 @@ export class RenderPipeline implements ZograRenderPipeline
         context.renderer.clear(Color.black);
         for (const light of lights)
         {
+            if (!light.enable)
+                continue;
             context.renderer.drawMesh(light.mesh, light.localToWorldMatrix, light.material);
         }
         context.renderer.setRenderTarget(RenderTarget.CanvasTarget);

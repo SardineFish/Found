@@ -1,9 +1,10 @@
-import { Entity, RenderObject, vec3 } from "zogra-renderer";
+import { Entity, RenderObject, vec2, vec3 } from "zogra-renderer";
 import { ProceduralLightMaterial } from "../material/2d-light";
 import { makeQuad } from "../utils/mesh";
 
 export class Light2D extends Entity
 {
+    enable: boolean = true;
     mesh = makeQuad();
     material = new ProceduralLightMaterial();
 
@@ -15,4 +16,22 @@ export class Light2D extends Entity
         this.localScaling = vec3(size, size, size);
     }
 
+
+    get direction()
+    {
+        return this.material.lightDirection;
+    }
+    set direction(dir: vec2)
+    {
+        this.material.lightDirection = dir;
+    }
+
+    get halfAngle()
+    {
+        return this.material.lightAngle;
+    }
+    set halfAngle(rad: number)
+    {
+        this.material.lightAngle = rad;
+    }
 }
