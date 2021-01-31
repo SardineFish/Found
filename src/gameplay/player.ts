@@ -1,7 +1,6 @@
-import { Entity, InputManager, Keys, minus, mul, Scene, Texture2D, Time, vec2 } from "zogra-renderer";
+import { Entity, FilterMode, InputManager, Keys, minus, mul, Scene, Texture2D, Time, vec2 } from "zogra-renderer";
 import { Material2D } from "../material/2d";
 import { Rigidbody } from "./rigidbody";
-import playerImage from "../../assets/texture/tex.png";
 import { loadImage } from "../utils/load-image";
 import { makeQuad } from "../utils/mesh";
 import { Tilemap } from "../tilemap/tilemap";
@@ -15,6 +14,9 @@ import { showLog } from "../ui/log";
 import { updateTools as updateToolsUI } from "../ui/tools";
 import { Mark } from "./mark";
 import { FlashLight } from "./flashlight";
+import { Sprite } from "../rendering/sprite";
+import playerImg from "../../assets/texture/0x72_16x16DungeonTileset.v4.png";
+import { TextureFormat } from "zogra-renderer/dist/core/texture-format";
 
 export interface Tool
 {
@@ -53,14 +55,10 @@ export class Player extends Rigidbody
 
     async init()
     {
-        const material = new Material2D();
-        const texture = new Texture2D();
-        texture.setData(await loadImage(playerImage));
-        material.texture = texture;
-        this.position.z = 1;
-
-        this.materials[0] = material;
-        this.meshes[0] = makeQuad();
+        const img = await loadImage(playerImg);
+        const texture = new Texture2D(img.width, img.height, TextureFormat.RGBA, FilterMode.Nearest);
+        texture.setData(img);
+        this.sprite = new Sprite(texture, vec2(16, 16), vec2(4, 7));
     }
 
     update(entity: Entity, time: Time)

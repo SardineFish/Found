@@ -45,10 +45,11 @@ ul {
 #craft {
     width: 40em;
     height: 30em;
-    background-color: white;
+    background-color: #444;
     display: none;
     flex-flow: column nowrap;
     align-items: center;;
+    color: #eee;
 }
 
 #craft #items {

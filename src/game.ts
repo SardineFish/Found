@@ -1,9 +1,10 @@
-import { Camera, InputManager, Keys, Projection, RenderObject, Scene, Texture2D, vec2, vec3, ZograEngine } from "zogra-renderer";
+import { Camera, FilterMode, InputManager, Keys, Projection, RenderObject, Scene, Texture2D, vec2, vec3, ZograEngine } from "zogra-renderer";
 
 import { Material2D } from "./material/2d";
 import { loadImage } from "./utils/load-image";
 import textureImage from "../assets/texture/tex.png";
 import checkboardImage from "../assets/texture/checkboard.png";
+import tilesImg from "../assets/texture/tiles.png";
 import { Tilemap } from "./tilemap/tilemap";
 import { TilemapMaterial } from "./material/tilemap";
 import { ChunksManager } from "./map/map-generator";
@@ -39,11 +40,13 @@ export async function start(engine: ZograEngine, session: GameSession)
     engine.scene.add(entity);
 
     let tilemap = new Tilemap();
+    tilemap.position = vec3(0, 0, -10);
     engine.scene.add(tilemap);
-    const checkboard = new Texture2D();
-    checkboard.setData(await loadImage(checkboardImage));
-    (tilemap.materials[0] as TilemapMaterial).texture = checkboard;
-    (tilemap.materials[0] as TilemapMaterial).atlasSize = vec2(4, 4);
+    const tiles = new Texture2D();
+    tiles.filterMode = FilterMode.Nearest;
+    tiles.setData(await loadImage(tilesImg));
+    (tilemap.materials[0] as TilemapMaterial).texture = tiles;
+    (tilemap.materials[0] as TilemapMaterial).atlasSize = vec2(7, 7);
 
     const generator = new ChunksManager(tilemap, session.seed);    
 

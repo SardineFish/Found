@@ -1,5 +1,4 @@
-import { RenderObject, Scene, Texture2D, vec2, vec3, Vector2 } from "zogra-renderer";
-import playerImage from "../../assets/texture/tex.png";
+import { FilterMode, RenderObject, Scene, Texture2D, vec2, vec3, Vector2 } from "zogra-renderer";
 import { Material2D } from "../material/2d";
 import { SetObject, SyncData } from "../network/message";
 import { GameSession } from "../network/session";
@@ -8,8 +7,12 @@ import { makeQuad } from "../utils/mesh";
 import { Campfire } from "./campfire";
 import { FlashLight } from "./flashlight";
 import { Mark } from "./mark";
+import { SpriteObject } from "./sprite-object";
+import playerImg from "../../assets/texture/0x72_16x16DungeonTileset.v4.png";
+import { Sprite } from "../rendering/sprite";
+import { TextureFormat } from "zogra-renderer/dist/core/texture-format";
 
-export class NetworkPlayer extends RenderObject
+export class NetworkPlayer extends SpriteObject
 {
     session: GameSession;
     flashlight: FlashLight;
@@ -27,17 +30,12 @@ export class NetworkPlayer extends RenderObject
 
     async init()
     {
-        const material = new Material2D();
+        const img = await loadImage(playerImg);
         const texture = new Texture2D();
-        texture.setData(await loadImage(playerImage));
-        material.texture = texture;
-        this.position.z = 1;
-
-        this.materials[0] = material;
-        this.meshes[0] = makeQuad();
-        
-        this.session.onSync = this.sync.bind(this);
-        this.session.onSetObj = this.setObj.bind(this);
+        texture.filterMode = FilterMode.Nearest;
+        texture.format = TextureFormat.RGBA;
+        texture.setData(img);
+        this.sprite = new Sprite(texture, vec2(16, 16), vec2(4, 7));
     }
 
     sync(data: SyncData)

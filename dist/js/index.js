@@ -86,6 +86,19 @@
 /************************************************************************/
 /******/ ({
 
+/***/ "./assets/texture/0x72_16x16DungeonTileset.v4.png":
+/*!********************************************************!*\
+  !*** ./assets/texture/0x72_16x16DungeonTileset.v4.png ***!
+  \********************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = (__webpack_require__.p + "static/img/0x72_16x16DungeonTileset.v4.png");
+
+/***/ }),
+
 /***/ "./assets/texture/checkboard.png":
 /*!***************************************!*\
   !*** ./assets/texture/checkboard.png ***!
@@ -109,6 +122,19 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ __webpack_exports__["default"] = (__webpack_require__.p + "static/img/tex.png");
+
+/***/ }),
+
+/***/ "./assets/texture/tiles.png":
+/*!**********************************!*\
+  !*** ./assets/texture/tiles.png ***!
+  \**********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = (__webpack_require__.p + "static/img/tiles.png");
 
 /***/ }),
 
@@ -8778,7 +8804,7 @@ const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-rend
 const _2d_1 = __webpack_require__(/*! ./material/2d */ "./src/material/2d.ts");
 const load_image_1 = __webpack_require__(/*! ./utils/load-image */ "./src/utils/load-image.ts");
 const tex_png_1 = __importDefault(__webpack_require__(/*! ../assets/texture/tex.png */ "./assets/texture/tex.png"));
-const checkboard_png_1 = __importDefault(__webpack_require__(/*! ../assets/texture/checkboard.png */ "./assets/texture/checkboard.png"));
+const tiles_png_1 = __importDefault(__webpack_require__(/*! ../assets/texture/tiles.png */ "./assets/texture/tiles.png"));
 const tilemap_1 = __webpack_require__(/*! ./tilemap/tilemap */ "./src/tilemap/tilemap.ts");
 const map_generator_1 = __webpack_require__(/*! ./map/map-generator */ "./src/map/map-generator.ts");
 const player_1 = __webpack_require__(/*! ./gameplay/player */ "./src/gameplay/player.ts");
@@ -8804,11 +8830,13 @@ function start(engine, session) {
         entity.materials[0] = mat;
         engine.scene.add(entity);
         let tilemap = new tilemap_1.Tilemap();
+        tilemap.position = zogra_renderer_1.vec3(0, 0, -10);
         engine.scene.add(tilemap);
-        const checkboard = new zogra_renderer_1.Texture2D();
-        checkboard.setData(yield load_image_1.loadImage(checkboard_png_1.default));
-        tilemap.materials[0].texture = checkboard;
-        tilemap.materials[0].atlasSize = zogra_renderer_1.vec2(4, 4);
+        const tiles = new zogra_renderer_1.Texture2D();
+        tiles.filterMode = zogra_renderer_1.FilterMode.Nearest;
+        tiles.setData(yield load_image_1.loadImage(tiles_png_1.default));
+        tilemap.materials[0].texture = tiles;
+        tilemap.materials[0].atlasSize = zogra_renderer_1.vec2(7, 7);
         const generator = new map_generator_1.ChunksManager(tilemap, session.seed);
         let player = new player_1.Player(engine.scene, input, tilemap, session);
         engine.scene.add(player);
@@ -8969,6 +8997,8 @@ const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-rend
 const sprite_1 = __webpack_require__(/*! ../rendering/sprite */ "./src/rendering/sprite.ts");
 const checkboard_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/checkboard.png */ "./assets/texture/checkboard.png"));
 const load_image_1 = __webpack_require__(/*! ../utils/load-image */ "./src/utils/load-image.ts");
+const tiles_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/tiles.png */ "./assets/texture/tiles.png"));
+const texture_format_1 = __webpack_require__(/*! zogra-renderer/dist/core/texture-format */ "./zogra-renderer/dist/core/texture-format.js");
 let globalEntities;
 function initGlobalEntities(entities) {
     globalEntities = entities;
@@ -8993,6 +9023,18 @@ function loadAssets() {
                 const texture = new zogra_renderer_1.Texture2D();
                 texture.setData(img);
                 assets.mark = new sprite_1.Sprite(texture, zogra_renderer_1.vec2(4, 4), zogra_renderer_1.vec2(2, 3));
+            }),
+            //tiles
+            load_image_1.loadImage(tiles_png_1.default).then(img => {
+                const texture = new zogra_renderer_1.Texture2D(img.width, img.height, texture_format_1.TextureFormat.RGB, zogra_renderer_1.FilterMode.Nearest);
+                texture.setData(img);
+                const sprites = {};
+                for (let y = 0; y < 7; y++) {
+                    for (let x = 0; x < 7; x++) {
+                        sprites[`[${x},${y}]`] = new sprite_1.Sprite(texture, zogra_renderer_1.vec2(7, 7), zogra_renderer_1.vec2(x, y));
+                    }
+                }
+                assets.tiles = sprites;
             }),
         ]);
         return assets;
@@ -9110,14 +9152,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NetworkPlayer = void 0;
 const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
-const tex_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/tex.png */ "./assets/texture/tex.png"));
-const _2d_1 = __webpack_require__(/*! ../material/2d */ "./src/material/2d.ts");
 const load_image_1 = __webpack_require__(/*! ../utils/load-image */ "./src/utils/load-image.ts");
-const mesh_1 = __webpack_require__(/*! ../utils/mesh */ "./src/utils/mesh.ts");
 const campfire_1 = __webpack_require__(/*! ./campfire */ "./src/gameplay/campfire.ts");
 const flashlight_1 = __webpack_require__(/*! ./flashlight */ "./src/gameplay/flashlight.ts");
 const mark_1 = __webpack_require__(/*! ./mark */ "./src/gameplay/mark.ts");
-class NetworkPlayer extends zogra_renderer_1.RenderObject {
+const sprite_object_1 = __webpack_require__(/*! ./sprite-object */ "./src/gameplay/sprite-object.ts");
+const _0x72_16x16DungeonTileset_v4_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/0x72_16x16DungeonTileset.v4.png */ "./assets/texture/0x72_16x16DungeonTileset.v4.png"));
+const sprite_1 = __webpack_require__(/*! ../rendering/sprite */ "./src/rendering/sprite.ts");
+const texture_format_1 = __webpack_require__(/*! zogra-renderer/dist/core/texture-format */ "./zogra-renderer/dist/core/texture-format.js");
+class NetworkPlayer extends sprite_object_1.SpriteObject {
     constructor(scene, session) {
         super();
         this.flashlight = new flashlight_1.FlashLight();
@@ -9127,15 +9170,12 @@ class NetworkPlayer extends zogra_renderer_1.RenderObject {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            const material = new _2d_1.Material2D();
+            const img = yield load_image_1.loadImage(_0x72_16x16DungeonTileset_v4_png_1.default);
             const texture = new zogra_renderer_1.Texture2D();
-            texture.setData(yield load_image_1.loadImage(tex_png_1.default));
-            material.texture = texture;
-            this.position.z = 1;
-            this.materials[0] = material;
-            this.meshes[0] = mesh_1.makeQuad();
-            this.session.onSync = this.sync.bind(this);
-            this.session.onSetObj = this.setObj.bind(this);
+            texture.filterMode = zogra_renderer_1.FilterMode.Nearest;
+            texture.format = texture_format_1.TextureFormat.RGBA;
+            texture.setData(img);
+            this.sprite = new sprite_1.Sprite(texture, zogra_renderer_1.vec2(16, 16), zogra_renderer_1.vec2(4, 7));
         });
     }
     sync(data) {
@@ -9181,11 +9221,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
 const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
-const _2d_1 = __webpack_require__(/*! ../material/2d */ "./src/material/2d.ts");
 const rigidbody_1 = __webpack_require__(/*! ./rigidbody */ "./src/gameplay/rigidbody.ts");
-const tex_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/tex.png */ "./assets/texture/tex.png"));
 const load_image_1 = __webpack_require__(/*! ../utils/load-image */ "./src/utils/load-image.ts");
-const mesh_1 = __webpack_require__(/*! ../utils/mesh */ "./src/utils/mesh.ts");
 const map_generator_1 = __webpack_require__(/*! ../map/map-generator */ "./src/map/map-generator.ts");
 const craft_1 = __webpack_require__(/*! ../ui/craft */ "./src/ui/craft.ts");
 const campfire_1 = __webpack_require__(/*! ./campfire */ "./src/gameplay/campfire.ts");
@@ -9194,6 +9231,9 @@ const log_1 = __webpack_require__(/*! ../ui/log */ "./src/ui/log.ts");
 const tools_1 = __webpack_require__(/*! ../ui/tools */ "./src/ui/tools.ts");
 const mark_1 = __webpack_require__(/*! ./mark */ "./src/gameplay/mark.ts");
 const flashlight_1 = __webpack_require__(/*! ./flashlight */ "./src/gameplay/flashlight.ts");
+const sprite_1 = __webpack_require__(/*! ../rendering/sprite */ "./src/rendering/sprite.ts");
+const _0x72_16x16DungeonTileset_v4_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/0x72_16x16DungeonTileset.v4.png */ "./assets/texture/0x72_16x16DungeonTileset.v4.png"));
+const texture_format_1 = __webpack_require__(/*! zogra-renderer/dist/core/texture-format */ "./zogra-renderer/dist/core/texture-format.js");
 class Player extends rigidbody_1.Rigidbody {
     constructor(scene, input, tilemap, session) {
         super(tilemap);
@@ -9215,13 +9255,10 @@ class Player extends rigidbody_1.Rigidbody {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            const material = new _2d_1.Material2D();
-            const texture = new zogra_renderer_1.Texture2D();
-            texture.setData(yield load_image_1.loadImage(tex_png_1.default));
-            material.texture = texture;
-            this.position.z = 1;
-            this.materials[0] = material;
-            this.meshes[0] = mesh_1.makeQuad();
+            const img = yield load_image_1.loadImage(_0x72_16x16DungeonTileset_v4_png_1.default);
+            const texture = new zogra_renderer_1.Texture2D(img.width, img.height, texture_format_1.TextureFormat.RGBA, zogra_renderer_1.FilterMode.Nearest);
+            texture.setData(img);
+            this.sprite = new sprite_1.Sprite(texture, zogra_renderer_1.vec2(16, 16), zogra_renderer_1.vec2(4, 7));
         });
     }
     update(entity, time) {
@@ -9421,7 +9458,8 @@ exports.Rigidbody = void 0;
 const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
 const debug_1 = __webpack_require__(/*! ../utils/debug */ "./src/utils/debug.ts");
 const math_1 = __webpack_require__(/*! ../utils/math */ "./src/utils/math.ts");
-class Rigidbody extends zogra_renderer_1.RenderObject {
+const sprite_object_1 = __webpack_require__(/*! ./sprite-object */ "./src/gameplay/sprite-object.ts");
+class Rigidbody extends sprite_object_1.SpriteObject {
     constructor(tilemap) {
         super();
         this.colliderSize = zogra_renderer_1.vec2(0.8, 0.8);
@@ -9646,6 +9684,32 @@ const ItemCount = {
     [ItemType.Wire]: 10,
     [ItemType.PCB]: 10,
 };
+const TileOffsets = {
+    ["11111111"]: zogra_renderer_1.vec2(3, 3),
+    ["00111110"]: zogra_renderer_1.vec2(6, 3),
+    ["00001110"]: zogra_renderer_1.vec2(6, 4),
+    ["10011111"]: zogra_renderer_1.vec2(5, 4),
+    ["10111111"]: zogra_renderer_1.vec2(4, 4),
+    // ["10011111"]:vec2(4, 5),
+    // ["00001110"]:vec2(4, 6),
+    ["10001111"]: zogra_renderer_1.vec2(3, 6),
+    ["10000011"]: zogra_renderer_1.vec2(2, 6),
+    ["11100111"]: zogra_renderer_1.vec2(2, 5),
+    ["11101111"]: zogra_renderer_1.vec2(2, 4),
+    ["11001111"]: zogra_renderer_1.vec2(1, 4),
+    // ["10000011"]:vec2(0, 4),
+    ["11100011"]: zogra_renderer_1.vec2(0, 3),
+    ["11100000"]: zogra_renderer_1.vec2(0, 2),
+    ["11111001"]: zogra_renderer_1.vec2(1, 2),
+    ["11111011"]: zogra_renderer_1.vec2(2, 2),
+    ["11110011"]: zogra_renderer_1.vec2(2, 1),
+    // ["11100000"]:vec2(2, 0),
+    ["11111000"]: zogra_renderer_1.vec2(3, 0),
+    ["00111000"]: zogra_renderer_1.vec2(4, 0),
+    ["01111110"]: zogra_renderer_1.vec2(4, 1),
+    ["11111110"]: zogra_renderer_1.vec2(4, 2),
+    ["11111100"]: zogra_renderer_1.vec2(5, 2),
+};
 const ItemAccumWeight = Object.keys(ItemCount)
     .map(item => ({
     item: item,
@@ -9728,18 +9792,60 @@ class ChunkData {
             for (let x = 0; x < ChunkSize; x++) {
                 let offset = zogra_renderer_1.vec2(x, y);
                 let pos = zogra_renderer_1.plus(zogra_renderer_1.mul(this.chunkPos, ChunkSize), offset);
-                let n = noise.simplex2(pos.x / 10, pos.y / 10);
-                let n2 = noise.perlin2(pos.x / 5, pos.y / 5);
-                // let n3 = this.noiseMap.perlin2(pos.x / 5, pos.y / 5);
-                n = n / 2 + n2 / 4 - 0.1;
-                if (n < 0) {
-                    tilemap.setTile(pos, TileGround);
+                if (this.noiseAt(noise, pos) < 0) {
+                    tilemap.setTile(pos, {
+                        collide: false,
+                        texture_offset: zogra_renderer_1.vec2(0, 0),
+                    });
+                }
+                else if (this.noiseAt(noise, zogra_renderer_1.plus(pos, zogra_renderer_1.vec2.down())) >= 0) {
+                    tilemap.setTile(pos, {
+                        collide: true,
+                        texture_offset: zogra_renderer_1.vec2(3, 3),
+                    });
                 }
                 else {
-                    tilemap.setTile(pos, TileWall);
+                    tilemap.setTile(pos, {
+                        collide: true,
+                        texture_offset: zogra_renderer_1.vec2(3, 0),
+                    });
                 }
             }
         }
+        // for (let y = 0; y < ChunkSize; y++)
+        // {
+        //     for (let x = 0; x < ChunkSize; x++)
+        //     {
+        //         let offset = vec2(x, y);
+        //         let pos = plus(mul(this.chunkPos, ChunkSize), offset);
+        //         if (tilemap.getTile(pos)?.collide)
+        //         {
+        //             let id = "";
+        //             for (const delta of order)
+        //             {
+        //                 if (tilemap.getTile(plus(pos, delta))?.collide)
+        //                     id += "1";
+        //                 else
+        //                     id += "0";
+        //             }
+        //             if (TileOffsets[id])
+        //                 tilemap.setTile(pos, {
+        //                     collide: true,
+        //                     texture_offset: TileOffsets[id],
+        //                 });
+        //             else 
+        //                 tilemap.setTile(pos, {
+        //                     collide: true,
+        //                     texture_offset: vec2(3, 0)
+        //                 })
+        //         }
+        //     }
+        // }
+    }
+    noiseAt(noise, pos) {
+        let n = noise.simplex2(pos.x / 10, pos.y / 10);
+        let n2 = noise.perlin2(pos.x / 5, pos.y / 5);
+        return n / 2 + n2 / 4 - 0.1;
     }
     generateItems() {
         var _a;
@@ -9768,6 +9874,13 @@ class ChunkData {
     }
     removeChest(chest) {
         this.chests = this.chests.filter(c => c !== chest);
+    }
+    tileAt(offset, wall) {
+        let sprite = global_1.Global().assets.tiles[`[${offset.x},${offset.y}]`];
+        return {
+            collide: wall,
+            texture_offset: offset,
+        };
     }
 }
 exports.ChunkData = ChunkData;
@@ -9858,7 +9971,9 @@ exports.Material2D = void 0;
 const _2d_vert_glsl_1 = __importDefault(__webpack_require__(/*! ../shader/2d-vert.glsl */ "./src/shader/2d-vert.glsl"));
 const _2d_frag_glsl_1 = __importDefault(__webpack_require__(/*! ../shader/2d-frag.glsl */ "./src/shader/2d-frag.glsl"));
 const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
-let Material2D = class Material2D extends zogra_renderer_1.MaterialFromShader(new zogra_renderer_1.Shader(_2d_vert_glsl_1.default, _2d_frag_glsl_1.default)) {
+let Material2D = class Material2D extends zogra_renderer_1.MaterialFromShader(new zogra_renderer_1.Shader(_2d_vert_glsl_1.default, _2d_frag_glsl_1.default, {
+    blend: [zogra_renderer_1.Blending.SrcAlpha, zogra_renderer_1.Blending.OneMinusSrcAlpha],
+})) {
     constructor() {
         super(...arguments);
         this.color = zogra_renderer_1.Color.white;
@@ -10150,7 +10265,7 @@ exports.Sprite = Sprite;
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vColor;\r\nin vec4 vPos;\r\nin vec2 vUV;\r\n\r\nuniform sampler2D uMainTex;\r\nuniform vec4 uColor;\r\n\r\nout vec4 fragColor;\r\n\r\nvoid main()\r\n{\r\n    vec3 color = texture(uMainTex, vUV.xy).rgb;\r\n    // color = color * vec3(uColor);\r\n    fragColor = vec4(color.rgb, 1.0f);\r\n}";
+module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vColor;\r\nin vec4 vPos;\r\nin vec2 vUV;\r\n\r\nuniform sampler2D uMainTex;\r\nuniform vec4 uColor;\r\n\r\nout vec4 fragColor;\r\n\r\nvoid main()\r\n{\r\n    vec4 color = texture(uMainTex, vUV.xy).rgba;\r\n    // color = color * vec3(uColor);\r\n    fragColor = color.rgba;\r\n}";
 
 /***/ }),
 
@@ -11229,7 +11344,9 @@ function compileBuiltinShaders(gl) {
             blend: shader_1.Blending.Disable,
             zWrite: false
         }, gl),
-        FlipTexture: new shader_1.Shader(exports.BuiltinShaderSources.FlipTexVert, exports.BuiltinShaderSources.BlitCopyFrag, {}, gl),
+        FlipTexture: new shader_1.Shader(exports.BuiltinShaderSources.FlipTexVert, exports.BuiltinShaderSources.BlitCopyFrag, {
+            blend: [shader_1.Blending.One, shader_1.Blending.Zero]
+        }, gl),
         ColoredLine: new shader_1.Shader(colorVert, colorFrag, {
             blend: [shader_1.Blending.SrcAlpha, shader_1.Blending.OneMinusSrcAlpha],
             depth: shader_1.DepthTest.Disable,
@@ -12582,6 +12699,8 @@ function flipTexture(ctx, dst, src, width, height, texFormat, filterMode, wrapMo
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, srcTex);
     gl.uniform1i(shader.builtinUniformLocations.mainTex, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFuncSeparate(gl.ONE, gl.ZERO, gl.ONE, gl.ZERO);
     const mesh = ctx.assets.meshes.screenQuad;
     mesh.bind(shader, gl);
     gl.drawElements(gl.TRIANGLE_STRIP, mesh.triangles.length, gl.UNSIGNED_INT, 0);

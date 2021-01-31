@@ -3,8 +3,9 @@ import { Color, div, dot, Entity, InputManager, Keys, minus, mul, plus, RenderOb
 import { TileData, Tilemap } from "../tilemap/tilemap";
 import { Debug } from "../utils/debug";
 import { boxRaycast, floor2, minAbs, Rect } from "../utils/math";
+import { SpriteObject } from "./sprite-object";
 
-export class Rigidbody extends RenderObject
+export class Rigidbody extends SpriteObject
 {
     colliderSize: vec2 = vec2(0.8, 0.8);
     colliderOffset: vec2 = vec2.zero();

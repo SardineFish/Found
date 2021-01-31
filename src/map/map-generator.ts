@@ -1,4 +1,4 @@
-import { mul, plus, vec2 } from "zogra-renderer";
+import { mul, plus, vec2, Vector2 } from "zogra-renderer";
 import { Chunk, TileData, Tilemap } from "../tilemap/tilemap";
 import seedrandom from "seedrandom";
 import { floor2 } from "../utils/math";
@@ -51,6 +51,33 @@ const ItemCount: { [key: string]: number} = {
     [ItemType.Wire]:10,
     [ItemType.PCB]: 10,
 }
+const TileOffsets: { [key: string]: vec2 } = {
+    ["11111111"]: vec2(3, 3),
+    ["00111110"]: vec2(6, 3),
+    ["00001110"]: vec2(6, 4),
+    ["10011111"]: vec2(5, 4),
+    ["10111111"]: vec2(4, 4),
+    // ["10011111"]:vec2(4, 5),
+    // ["00001110"]:vec2(4, 6),
+    ["10001111"]: vec2(3, 6),
+    ["10000011"]: vec2(2, 6),
+    ["11100111"]: vec2(2, 5),
+    ["11101111"]: vec2(2, 4),
+    ["11001111"]: vec2(1, 4),
+    // ["10000011"]:vec2(0, 4),
+    ["11100011"]: vec2(0, 3),
+    ["11100000"]: vec2(0, 2),
+    ["11111001"]: vec2(1, 2),
+    ["11111011"]: vec2(2, 2),
+    ["11110011"]: vec2(2, 1),
+    // ["11100000"]:vec2(2, 0),
+    ["11111000"]: vec2(3, 0),
+    ["00111000"]: vec2(4, 0),
+    ["01111110"]: vec2(4, 1),
+    ["11111110"]: vec2(4, 2),
+    ["11111100"]: vec2(5, 2),
+    // ["00111000"]:vec2(6, 2),
+};
 
 const ItemAccumWeight = Object.keys(ItemCount)
     .map(item => ({
@@ -170,20 +197,67 @@ export class ChunkData
             {
                 let offset = vec2(x, y);
                 let pos = plus(mul(this.chunkPos, ChunkSize), offset);
-                let n = noise.simplex2(pos.x / 10, pos.y / 10)
-                let n2 = noise.perlin2(pos.x / 5, pos.y / 5);
-                // let n3 = this.noiseMap.perlin2(pos.x / 5, pos.y / 5);
-                n = n / 2 + n2 / 4 - 0.1;
-                if (n < 0)
+                if (this.noiseAt(noise, pos) < 0)
                 {
-                    tilemap.setTile(pos, TileGround);
+                    tilemap.setTile(pos, {
+                        collide: false,
+                        texture_offset: vec2(0, 0),
+                    });
+                }
+                else if (this.noiseAt(noise, plus(pos, vec2.down())) >= 0)
+                {
+                    tilemap.setTile(pos, {
+                        collide: true,
+                        texture_offset: vec2(3, 3),
+                    });
                 }
                 else
                 {
-                    tilemap.setTile(pos, TileWall);
+                    tilemap.setTile(pos, {
+                        collide: true,
+                        texture_offset: vec2(3, 0),
+                    });
                 }
             }
         }
+
+        // for (let y = 0; y < ChunkSize; y++)
+        // {
+        //     for (let x = 0; x < ChunkSize; x++)
+        //     {
+        //         let offset = vec2(x, y);
+        //         let pos = plus(mul(this.chunkPos, ChunkSize), offset);
+
+        //         if (tilemap.getTile(pos)?.collide)
+        //         {
+        //             let id = "";
+        //             for (const delta of order)
+        //             {
+        //                 if (tilemap.getTile(plus(pos, delta))?.collide)
+        //                     id += "1";
+        //                 else
+        //                     id += "0";
+        //             }
+        //             if (TileOffsets[id])
+        //                 tilemap.setTile(pos, {
+        //                     collide: true,
+        //                     texture_offset: TileOffsets[id],
+        //                 });
+        //             else 
+        //                 tilemap.setTile(pos, {
+        //                     collide: true,
+        //                     texture_offset: vec2(3, 0)
+        //                 })
+        //         }
+        //     }
+        // }
+    }
+
+    private noiseAt(noise: Noise, pos: vec2)
+    {
+        let n = noise.simplex2(pos.x / 10, pos.y / 10)
+        let n2 = noise.perlin2(pos.x / 5, pos.y / 5);
+        return n / 2 + n2 / 4 - 0.1;
     }
 
     generateItems()
@@ -219,8 +293,19 @@ export class ChunkData
         // console.log(`gen ${this.chests.length} for ${this.chunkPos}`);
     }
 
+    
+
     removeChest(chest: Chest)
     {
         this.chests = this.chests.filter(c => c !== chest);
+    }
+
+    private tileAt(offset: vec2, wall: boolean): TileData
+    {
+        let sprite = Global().assets.tiles[`[${offset.x},${offset.y}]`];
+        return {
+            collide: wall,
+            texture_offset: offset,
+        }
     }
 }
