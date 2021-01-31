@@ -47,11 +47,11 @@ export async function start(engine: ZograEngine, session: GameSession)
 
     const generator = new ChunksManager(tilemap, session.seed);    
 
-    let player = new Player(input, tilemap, session);
+    let player = new Player(engine.scene, input, tilemap, session);
     engine.scene.add(player);
     camera.parent = player;
 
-    let remotePlayer = new NetworkPlayer(session);
+    let remotePlayer = new NetworkPlayer(engine.scene, session);
     engine.scene.add(remotePlayer);
 
     let light = new Light2D();
@@ -89,6 +89,7 @@ export async function start(engine: ZograEngine, session: GameSession)
         tilemap,
         assets: await loadAssets(),
         input,
+        session,
     });
 
     engine.start();

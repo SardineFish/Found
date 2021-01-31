@@ -6,6 +6,7 @@ import { NetworkPlayer } from "./network-player";
 import { Player } from "./player";
 import checkboard from "../../assets/texture/checkboard.png";
 import { loadImage } from "../utils/load-image";
+import { GameSession } from "../network/session";
 
 interface GlobalEntities
 {
@@ -18,6 +19,7 @@ interface GlobalEntities
     chunksManager: ChunksManager;
     assets: Assets;
     input: InputManager;
+    session: GameSession;
 }
 let globalEntities: GlobalEntities;
 

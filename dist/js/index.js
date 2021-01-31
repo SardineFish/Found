@@ -8810,10 +8810,10 @@ function start(engine, session) {
         tilemap.materials[0].texture = checkboard;
         tilemap.materials[0].atlasSize = zogra_renderer_1.vec2(4, 4);
         const generator = new map_generator_1.ChunksManager(tilemap, session.seed);
-        let player = new player_1.Player(input, tilemap, session);
+        let player = new player_1.Player(engine.scene, input, tilemap, session);
         engine.scene.add(player);
         camera.parent = player;
-        let remotePlayer = new network_player_1.NetworkPlayer(session);
+        let remotePlayer = new network_player_1.NetworkPlayer(engine.scene, session);
         engine.scene.add(remotePlayer);
         let light = new light_1.Light2D();
         engine.scene.add(light, player);
@@ -8844,6 +8844,7 @@ function start(engine, session) {
             tilemap,
             assets: yield global_1.loadAssets(),
             input,
+            session,
         });
         engine.start();
     });
@@ -8871,10 +8872,15 @@ class Campfire extends light_1.Light2D {
         super();
         this.size = 20;
     }
-    static spawn(pos) {
+    static spawn(pos, sync = false) {
         const campfire = new Campfire();
-        campfire.position = pos.clone();
+        campfire.position = pos.toVec3(1);
         global_1.Global().scene.add(campfire);
+        if (sync)
+            global_1.Global().session.setObj({
+                pos: pos,
+                type: "campfire"
+            });
     }
 }
 exports.Campfire = Campfire;
@@ -8909,6 +8915,31 @@ class Chest extends sprite_object_1.SpriteObject {
     }
 }
 exports.Chest = Chest;
+
+
+/***/ }),
+
+/***/ "./src/gameplay/flashlight.ts":
+/*!************************************!*\
+  !*** ./src/gameplay/flashlight.ts ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FlashLight = void 0;
+const light_1 = __webpack_require__(/*! ./light */ "./src/gameplay/light.ts");
+class FlashLight extends light_1.Light2D {
+    constructor() {
+        super();
+        this.enable = false;
+    }
+    set direction(dir) {
+    }
+}
+exports.FlashLight = FlashLight;
 
 
 /***/ }),
@@ -9026,11 +9057,17 @@ class Mark extends sprite_object_1.SpriteObject {
         super();
         this.sprite = global_1.Global().assets.mark;
     }
-    static makeOnGround(pos) {
+    static makeOnGround(pos, sync = false) {
         pos = math_1.floor2(pos).plus(zogra_renderer_1.vec2(.5));
+        // console.log(`mark on ${pos}`);
         const mark = new Mark();
         mark.position = pos.toVec3(1);
         global_1.Global().scene.add(mark);
+        if (sync)
+            global_1.Global().session.setObj({
+                type: "mark",
+                pos: pos
+            });
     }
 }
 exports.Mark = Mark;
@@ -9066,9 +9103,14 @@ const tex_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/t
 const _2d_1 = __webpack_require__(/*! ../material/2d */ "./src/material/2d.ts");
 const load_image_1 = __webpack_require__(/*! ../utils/load-image */ "./src/utils/load-image.ts");
 const mesh_1 = __webpack_require__(/*! ../utils/mesh */ "./src/utils/mesh.ts");
+const campfire_1 = __webpack_require__(/*! ./campfire */ "./src/gameplay/campfire.ts");
+const flashlight_1 = __webpack_require__(/*! ./flashlight */ "./src/gameplay/flashlight.ts");
+const mark_1 = __webpack_require__(/*! ./mark */ "./src/gameplay/mark.ts");
 class NetworkPlayer extends zogra_renderer_1.RenderObject {
-    constructor(session) {
+    constructor(scene, session) {
         super();
+        this.flashlight = new flashlight_1.FlashLight();
+        scene.add(this.flashlight, this);
         this.session = session;
         this.init();
     }
@@ -9082,10 +9124,21 @@ class NetworkPlayer extends zogra_renderer_1.RenderObject {
             this.materials[0] = material;
             this.meshes[0] = mesh_1.makeQuad();
             this.session.onSync = this.sync.bind(this);
+            this.session.onSetObj = this.setObj.bind(this);
         });
     }
     sync(data) {
         this.position = zogra_renderer_1.vec3(data.pos[0], data.pos[1], 3);
+    }
+    setObj(data) {
+        switch (data.type) {
+            case "campfire":
+                campfire_1.Campfire.spawn(zogra_renderer_1.vec2(data.pos[0], data.pos[1]));
+                break;
+            case "mark":
+                mark_1.Mark.makeOnGround(zogra_renderer_1.vec2(data.pos[0], data.pos[1]));
+                break;
+        }
     }
 }
 exports.NetworkPlayer = NetworkPlayer;
@@ -9129,16 +9182,21 @@ const global_1 = __webpack_require__(/*! ./global */ "./src/gameplay/global.ts")
 const log_1 = __webpack_require__(/*! ../ui/log */ "./src/ui/log.ts");
 const tools_1 = __webpack_require__(/*! ../ui/tools */ "./src/ui/tools.ts");
 const mark_1 = __webpack_require__(/*! ./mark */ "./src/gameplay/mark.ts");
+const flashlight_1 = __webpack_require__(/*! ./flashlight */ "./src/gameplay/flashlight.ts");
 class Player extends rigidbody_1.Rigidbody {
-    constructor(input, tilemap, session) {
+    constructor(scene, input, tilemap, session) {
         super(tilemap);
         this.moveSpeed = 5;
         this.resources = new Map();
         this.tools = [{ type: map_generator_1.ItemType.None, count: 0, endure: 1 }];
         this.currentToolIdx = 0;
         this.facing = zogra_renderer_1.vec2.down();
+        this.flashlightOn = false;
+        this.flashlightDir = zogra_renderer_1.vec2.up();
         this.input = input;
         this.session = session;
+        this.flashlight = new flashlight_1.FlashLight();
+        scene.add(this.flashlight, this);
         this.on("update", this.update.bind(this));
         this.init();
         tools_1.updateTools(this.tools, this.currentToolIdx);
@@ -9178,8 +9236,10 @@ class Player extends rigidbody_1.Rigidbody {
         moveInput.normalize();
         this.velocity = zogra_renderer_1.mul(moveInput, this.moveSpeed);
         this.session.sendSync({
-            pos: this.position,
-            velocity: this.velocity
+            pos: this.position.toVec2(),
+            velocity: this.velocity,
+            flashlight: this.flashlightOn,
+            flashlightDir: this.flashlightDir,
         });
         if (this.input.getKeyDown(zogra_renderer_1.Keys.C)) {
             this.craft();
@@ -9206,7 +9266,7 @@ class Player extends rigidbody_1.Rigidbody {
             const item = yield craft_1.craft(this.resources);
             switch (item) {
                 case map_generator_1.ItemType.Campfire:
-                    campfire_1.Campfire.spawn(this.position);
+                    campfire_1.Campfire.spawn(this.position.toVec2(), true);
                     break;
                 case map_generator_1.ItemType.Flashlight:
                     this.addTool(map_generator_1.ItemType.Flashlight);
@@ -9265,7 +9325,7 @@ class Player extends rigidbody_1.Rigidbody {
         const tool = this.tools[this.currentToolIdx];
         switch (tool.type) {
             case map_generator_1.ItemType.Paint:
-                mark_1.Mark.makeOnGround(pos);
+                mark_1.Mark.makeOnGround(pos, true);
                 use(tool);
                 break;
             case map_generator_1.ItemType.Pickaxe:
@@ -9816,6 +9876,7 @@ exports.TilemapMaterial = TilemapMaterial;
 
 "use strict";
 
+// import { vec2 } from "zogra-renderer";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageType = void 0;
 var MessageType;
@@ -9825,6 +9886,7 @@ var MessageType;
     MessageType["Reconnect"] = "reconnect";
     MessageType["Sync"] = "sync";
     MessageType["Start"] = "start";
+    MessageType["SetObject"] = "setobj";
 })(MessageType = exports.MessageType || (exports.MessageType = {}));
 
 
@@ -9849,6 +9911,7 @@ class GameSession {
         this.onError = () => { };
         this.onSync = () => { };
         this.onStart = () => { };
+        this.onSetObj = () => { };
         this.name = name;
         this.socket = new WebSocket(url);
         this.socket.onmessage = this.handshake.bind(this);
@@ -9860,7 +9923,15 @@ class GameSession {
             type: message_1.MessageType.Sync,
             data: data
         };
-        this.socket.send(JSON.stringify(msg));
+        this.sendMsg(msg);
+    }
+    setObj(data) {
+        const msg = {
+            id: this.id,
+            type: message_1.MessageType.SetObject,
+            data: data,
+        };
+        this.sendMsg(msg);
     }
     handshake(ev) {
         const msg = JSON.parse(ev.data);
@@ -9883,8 +9954,19 @@ class GameSession {
             case message_1.MessageType.Sync:
                 this.onSync(msg.data);
                 break;
+            case message_1.MessageType.SetObject:
+                this.onSetObj(msg.data);
+                break;
             default:
                 throw new Error("Invalid server message");
+        }
+    }
+    sendMsg(msg) {
+        try {
+            this.socket.send(JSON.stringify(msg));
+        }
+        catch (err) {
+            console.error(err);
         }
     }
     start() {

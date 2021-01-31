@@ -12,11 +12,17 @@ export class Mark extends SpriteObject
         this.sprite = Global().assets.mark;
     }
 
-    static makeOnGround(pos: vec2)
+    static makeOnGround(pos: vec2, sync = false)
     {
         pos = floor2(pos).plus(vec2(.5));
+        // console.log(`mark on ${pos}`);
         const mark = new Mark();
         mark.position = pos.toVec3(1);
         Global().scene.add(mark);
+        if (sync)
+            Global().session.setObj({
+                type: "mark",
+                pos: pos as number[] as [number, number]
+            });
     }
 }

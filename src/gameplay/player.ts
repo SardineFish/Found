@@ -1,4 +1,4 @@
-import { Entity, InputManager, Keys, minus, mul, Texture2D, Time, vec2 } from "zogra-renderer";
+import { Entity, InputManager, Keys, minus, mul, Scene, Texture2D, Time, vec2 } from "zogra-renderer";
 import { Material2D } from "../material/2d";
 import { Rigidbody } from "./rigidbody";
 import playerImage from "../../assets/texture/tex.png";
@@ -14,6 +14,7 @@ import { Chest } from "./chest";
 import { showLog } from "../ui/log";
 import { updateTools as updateToolsUI } from "../ui/tools";
 import { Mark } from "./mark";
+import { FlashLight } from "./flashlight";
 
 export interface Tool
 {
@@ -31,12 +32,17 @@ export class Player extends Rigidbody
     tools: Tool[] = [{type: ItemType.None, count: 0, endure: 1}];
     currentToolIdx: number = 0;
     facing: vec2 = vec2.down();
+    flashlight: FlashLight;
+    flashlightOn: boolean = false;
+    flashlightDir: vec2 = vec2.up();
 
-    constructor(input: InputManager, tilemap: Tilemap, session: GameSession)
+    constructor(scene: Scene, input: InputManager, tilemap: Tilemap, session: GameSession)
     {
         super(tilemap);
         this.input = input;
         this.session = session;
+        this.flashlight = new FlashLight();
+        scene.add(this.flashlight, this);
 
         this.on("update", this.update.bind(this));
 
@@ -87,8 +93,10 @@ export class Player extends Rigidbody
         
 
         this.session.sendSync({
-            pos: this.position,
-            velocity: this.velocity
+            pos: this.position.toVec2() as number[] as [number, number],
+            velocity: this.velocity as number[] as [number, number],
+            flashlight: this.flashlightOn,
+            flashlightDir: this.flashlightDir as number[] as [number, number],
         });
 
         if (this.input.getKeyDown(Keys.C))
@@ -123,7 +131,7 @@ export class Player extends Rigidbody
         switch (item)
         {
             case ItemType.Campfire:
-                Campfire.spawn(this.position);
+                Campfire.spawn(this.position.toVec2(), true);
                 break;
             case ItemType.Flashlight:
                 this.addTool(ItemType.Flashlight);
@@ -197,7 +205,7 @@ export class Player extends Rigidbody
         switch (tool.type)
         {
             case ItemType.Paint:
-                Mark.makeOnGround(pos);
+                Mark.makeOnGround(pos, true);
                 use(tool);
                 break;
             case ItemType.Pickaxe:

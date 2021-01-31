@@ -1,4 +1,4 @@
-import { ClientMessage, HandshakeData, JoinData, MessageType, ServerMessage, StartData, SyncData } from "./message";
+import { ClientMessage, HandshakeData, JoinData, MessageType, ServerMessage, SetObject, StartData, SyncData } from "./message";
 
 export class GameSession
 {
@@ -9,6 +9,7 @@ export class GameSession
     onError: (err: Error) => void = () => { };
     onSync: (data: SyncData) => void = () => { };
     onStart: (data: StartData) => void = () => { };
+    onSetObj: (data: SetObject) => void = () => { };
 
     constructor(url: string, name: string)
     {
@@ -24,7 +25,16 @@ export class GameSession
             type: MessageType.Sync,
             data: data
         }
-        this.socket.send(JSON.stringify(msg));
+        this.sendMsg(msg);
+    }
+    setObj(data: SetObject)
+    {
+        const msg: ClientMessage = {
+            id: this.id,
+            type: MessageType.SetObject,
+            data: data,
+        };
+        this.sendMsg(msg);
     }
     handshake(ev: MessageEvent<string>)
     {
@@ -51,8 +61,22 @@ export class GameSession
             case MessageType.Sync:
                 this.onSync(msg.data as SyncData);
                 break;
+            case MessageType.SetObject:
+                this.onSetObj(msg.data as SetObject);
+                break;
             default:
                 throw new Error("Invalid server message");
+        }
+    }
+    private sendMsg(msg: ClientMessage)
+    {
+        try
+        {
+            this.socket.send(JSON.stringify(msg));
+        }
+        catch (err)
+        {
+            console.error(err);
         }
     }
     private start()
