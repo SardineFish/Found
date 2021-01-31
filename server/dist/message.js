@@ -8,5 +8,6 @@ var MessageType;
     MessageType["Reconnect"] = "reconnect";
     MessageType["Sync"] = "sync";
     MessageType["Start"] = "start";
+    MessageType["SetObject"] = "setobj";
 })(MessageType = exports.MessageType || (exports.MessageType = {}));
 //# sourceMappingURL=message.js.map

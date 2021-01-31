@@ -39,14 +39,14 @@ var GameSession = /** @class */ (function () {
         var startA = {
             type: message_1.MessageType.Start,
             data: {
-                seed: this.seed,
+                seed: this.seed.toString(),
                 spawn: [0, 0]
             }
         };
         var startB = {
             type: message_1.MessageType.Start,
             data: {
-                seed: this.seed,
+                seed: this.seed.toString(),
                 spawn: offset
             }
         };

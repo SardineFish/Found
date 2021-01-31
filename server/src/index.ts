@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { HandshakeData, IncomeMessage, MessageType, OutcomeMessage } from "./message";
+import { HandshakeData, MessageType, ServerMessage } from "./message";
 import { GameSession } from "./session";
 import { Queue } from "./queue";
 import { Player } from "./player";
@@ -18,7 +18,7 @@ server.on("connection", (socket) =>
     console.log("Client connected");
     socket.once("message", (data: WebSocket.Data) =>
     {
-        const msg = JSON.parse(data as string) as IncomeMessage;
+        const msg = JSON.parse(data as string) as ServerMessage;
         switch (msg.type)
         {
             case MessageType.Join:
@@ -34,7 +34,7 @@ server.on("connection", (socket) =>
 function playerJoin(socket: WebSocket)
 {
     const player = new Player(socket);
-    const msg: OutcomeMessage = {
+    const msg: ServerMessage = {
         type: MessageType.ServerHandshake,
         data: <HandshakeData>{
             id: player.id,

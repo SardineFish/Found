@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { IncomeMessage, MessageType, OutcomeMessage, StartData } from "./message";
+import { ClientMessage, MessageType, ServerMessage, StartData } from "./message";
 import { Player } from "./player";
 
 const Distance = 32;
@@ -18,7 +18,6 @@ export class GameSession
         this.seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
         try
         {
-
             this.playerA.socket.on("message", this.playerAMsg.bind(this));
             this.playerB.socket.on("message", this.playerBMsg.bind(this));
         }
@@ -30,8 +29,8 @@ export class GameSession
 
     playerAMsg(data: WebSocket.Data)
     {
-        let obj = JSON.parse(data as string) as IncomeMessage;
-        this.playerB.send(<OutcomeMessage>{
+        let obj = JSON.parse(data as string) as ClientMessage;
+        this.playerB.send(<ServerMessage>{
             type: obj.type,
             data: obj.data,
         });
@@ -39,8 +38,8 @@ export class GameSession
 
     playerBMsg(data: WebSocket.Data)
     {
-        let obj = JSON.parse(data as string) as IncomeMessage;
-        this.playerA.send(<OutcomeMessage>{
+        let obj = JSON.parse(data as string) as ClientMessage;
+        this.playerA.send(<ServerMessage>{
             type: obj.type,
             data: obj.data,
         });
@@ -54,17 +53,17 @@ export class GameSession
         let len = Math.hypot(offset[0], offset[1]);
         offset = [offset[0] / len * Distance, offset[1] / len * Distance];
         
-        const startA: OutcomeMessage = {
+        const startA: ServerMessage = {
             type: MessageType.Start,
             data: <StartData>{
-                seed: this.seed,
+                seed: this.seed.toString(),
                 spawn: [0, 0]
             }
         };
-        const startB: OutcomeMessage = {
+        const startB: ServerMessage = {
             type: MessageType.Start,
             data: <StartData>{
-                seed: this.seed,
+                seed: this.seed.toString(),
                 spawn: offset
             }
         }

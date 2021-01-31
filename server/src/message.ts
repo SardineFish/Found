@@ -1,3 +1,5 @@
+type vec2 = [number, number];
+
 export enum MessageType
 {
     Join = "join",
@@ -5,12 +7,21 @@ export enum MessageType
     Reconnect = "reconnect",
     Sync = "sync",
     Start = "start",
+    SetObject = "setobj"
 }
 
 export interface SyncData
 {
-    pos: number[],
-    velocity: number[],
+    pos: vec2,
+    velocity: vec2,
+    flashlight: boolean,
+    flashlightDir: vec2;
+}
+
+export interface SetObject
+{
+    pos: vec2,
+    type: "mark" | "campfire",
 }
 
 export interface HandshakeData
@@ -18,21 +29,26 @@ export interface HandshakeData
     id: string;
 }
 
-export interface StartData
+export interface JoinData
 {
-    seed: number;
-    spawn: [number, number];
+    name: String,
 }
 
-export interface IncomeMessage
+export interface StartData
+{
+    seed: string;
+    spawn: vec2;
+}
+
+export interface ClientMessage
 {
     id: string,
     type: MessageType
-    data: SyncData | HandshakeData;
+    data: SyncData | JoinData | SetObject;
 }
 
-export interface OutcomeMessage
+export interface ServerMessage
 {
     type: MessageType,
-    data: SyncData | HandshakeData | StartData;
+    data: SyncData | HandshakeData | StartData | SetObject;
 }
