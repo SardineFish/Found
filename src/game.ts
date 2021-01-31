@@ -6,7 +6,7 @@ import textureImage from "../assets/texture/tex.png";
 import checkboardImage from "../assets/texture/checkboard.png";
 import { Tilemap } from "./tilemap/tilemap";
 import { TilemapMaterial } from "./material/tilemap";
-import { MapGenerator } from "./map/map-generator";
+import { ChunksManager } from "./map/map-generator";
 import { Rigidbody } from "./gameplay/rigidbody";
 import { Player } from "./gameplay/player";
 import { Light2D } from "./gameplay/light";
@@ -21,7 +21,7 @@ export async function start(engine: ZograEngine, session: GameSession)
     const camera = new Camera();
     camera.position = vec3(0, 0, 10);
     camera.projection = Projection.Orthographic;
-    camera.viewHeight = 20;
+    camera.viewHeight = 10;
 
     engine.scene.add(camera);
 
@@ -45,7 +45,7 @@ export async function start(engine: ZograEngine, session: GameSession)
     (tilemap.materials[0] as TilemapMaterial).texture = checkboard;
     (tilemap.materials[0] as TilemapMaterial).atlasSize = vec2(4, 4);
 
-    const generator = new MapGenerator(tilemap, session.seed);    
+    const generator = new ChunksManager(tilemap, session.seed);    
 
     let player = new Player(input, tilemap, session);
     engine.scene.add(player);
@@ -83,11 +83,12 @@ export async function start(engine: ZograEngine, session: GameSession)
         scene: engine.scene,
         engine,
         camera,
-        mapGenerator: generator,
+        chunksManager: generator,
         player,
         remotePlayer,
         tilemap,
-        assets: await loadAssets()
+        assets: await loadAssets(),
+        input,
     });
 
     engine.start();

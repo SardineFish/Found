@@ -14,7 +14,7 @@ void main()
 {
     vec2 uv = (vUV - vec2(0.5)) * vec2(2);
     float r = length(uv);
-    float light = 1.0 - r;
+    float light = pow(max(1.0 - r, 0.0), 2.0);
     vec3 color = texture(uMainTex, vUV.xy).rgb;
     // color = color * vec3(uColor);
     fragColor = vec4(light, light, light, 1.0);

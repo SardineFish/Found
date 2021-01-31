@@ -13,12 +13,15 @@ const engine = new ZograEngine(canvas);
 import { RenderPipeline } from "./rendering/render-pipeline";
 import { start } from "./game";
 import { GameSession } from "./network/session";
+import { showLog } from "./ui/log";
 
 
 const session = new GameSession("ws://found.sardinefish.com/ws", "User");
+showLog("connected");
 
 session.onStart = () =>
 {
+    showLog("game start");
     const renderPipeline = new RenderPipeline();
     engine.renderPipeline = renderPipeline;
     initDebugLyaerRenderer(renderPipeline.debuglayer);

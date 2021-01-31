@@ -1,6 +1,6 @@
 import { Camera, div, mat4, Mesh, MeshBuilder, minus, plus, RenderContext, RenderData, RenderObject, vec2, vec3, Vector2 } from "zogra-renderer";
 import { TilemapMaterial } from "../material/tilemap";
-import { calcChunkID } from "../utils/chunk-id";
+import { calcChunkID, calcChunkPos } from "../utils/chunk";
 import { floor2, floorReminder } from "../utils/math";
 
 const ChunkSize = 16;
@@ -77,14 +77,7 @@ export class Tilemap extends RenderObject
 
     private chunkPos(pos: Vector2): [Vector2, Vector2]
     {
-        const floorOffset = vec2(
-            pos.x < 0 ? /*1*/ 0 : 0,
-            pos.y < 0 ? /*1*/ 0 : 0,
-        );
-        return [minus(floor2(div(pos, vec2(ChunkSize, ChunkSize))), floorOffset), vec2(
-            floorReminder(pos.x, ChunkSize),
-            floorReminder(pos.y, ChunkSize),
-        )];
+        return calcChunkPos(pos, ChunkSize);
     }
 
     

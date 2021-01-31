@@ -3,10 +3,35 @@ body {
     font-family: "Open Sans",'Segoe UI', 'Microsoft Yahei UI', Tahoma, Geneva, Verdana, sans-serif;
     height: 100vh;
     width: 100vw;
+    user-select: none;
+}
+
+ul {
+    list-style: none;
 }
 
 #start-ui {
     display: none;   
+}
+#game-ui {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+}
+#logs {
+    position: absolute;
+    left: 2em;
+    bottom: 2em;
+    width: 20%;
+    height: 20%;
+    display: flex;
+    flex-flow: column-reverse nowrap;
+    color: #ccc;
 }
 #root {
     width: 100%;
@@ -15,6 +40,53 @@ body {
     flex-flow: column nowrap;
     align-items: center;
     justify-content: center;
+}
+
+#craft {
+    width: 40em;
+    height: 30em;
+    background-color: white;
+    display: none;
+    flex-flow: column nowrap;
+    align-items: center;;
+}
+
+#craft #items {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 2em;
+    flex: 1 0;
+}
+#craft .item {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    margin: 1em 0;
+}
+
+#craft .left {
+    flex: 1 0;
+}
+
+#craft .name {
+    font-size: 2em;
+
+}
+
+#craft .close {
+    margin: 2em;
+}
+
+.button {
+    align-items: center;
+    justify-self: center;
+    display: flex;
+    padding: .5em 2em;
+    background-color: #4db1f1;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
 }
 
 #canvas {

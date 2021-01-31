@@ -1,5 +1,5 @@
-import { Camera, Scene, Texture2D, vec2, ZograEngine } from "zogra-renderer";
-import { MapGenerator } from "../map/map-generator";
+import { Camera, InputManager, Scene, Texture2D, vec2, ZograEngine } from "zogra-renderer";
+import { ChunksManager } from "../map/map-generator";
 import { Sprite } from "../rendering/sprite";
 import { Tilemap } from "../tilemap/tilemap";
 import { NetworkPlayer } from "./network-player";
@@ -15,8 +15,9 @@ interface GlobalEntities
     camera: Camera;
     player: Player;
     remotePlayer: NetworkPlayer;
-    mapGenerator: MapGenerator;
+    chunksManager: ChunksManager;
     assets: Assets;
+    input: InputManager;
 }
 let globalEntities: GlobalEntities;
 

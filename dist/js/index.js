@@ -8791,7 +8791,7 @@ function start(engine, session) {
         const camera = new zogra_renderer_1.Camera();
         camera.position = zogra_renderer_1.vec3(0, 0, 10);
         camera.projection = zogra_renderer_1.Projection.Orthographic;
-        camera.viewHeight = 20;
+        camera.viewHeight = 10;
         engine.scene.add(camera);
         const mesh = engine.renderer.assets.meshes.quad;
         const entity = new zogra_renderer_1.RenderObject();
@@ -8809,7 +8809,7 @@ function start(engine, session) {
         checkboard.setData(yield load_image_1.loadImage(checkboard_png_1.default));
         tilemap.materials[0].texture = checkboard;
         tilemap.materials[0].atlasSize = zogra_renderer_1.vec2(4, 4);
-        const generator = new map_generator_1.MapGenerator(tilemap, session.seed);
+        const generator = new map_generator_1.ChunksManager(tilemap, session.seed);
         let player = new player_1.Player(input, tilemap, session);
         engine.scene.add(player);
         camera.parent = player;
@@ -8837,16 +8837,46 @@ function start(engine, session) {
             scene: engine.scene,
             engine,
             camera,
-            mapGenerator: generator,
+            chunksManager: generator,
             player,
             remotePlayer,
             tilemap,
-            assets: yield global_1.loadAssets()
+            assets: yield global_1.loadAssets(),
+            input,
         });
         engine.start();
     });
 }
 exports.start = start;
+
+
+/***/ }),
+
+/***/ "./src/gameplay/campfire.ts":
+/*!**********************************!*\
+  !*** ./src/gameplay/campfire.ts ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Campfire = void 0;
+const global_1 = __webpack_require__(/*! ./global */ "./src/gameplay/global.ts");
+const light_1 = __webpack_require__(/*! ./light */ "./src/gameplay/light.ts");
+class Campfire extends light_1.Light2D {
+    constructor() {
+        super();
+        this.size = 20;
+    }
+    static spawn(pos) {
+        const campfire = new Campfire();
+        campfire.position = pos.clone();
+        global_1.Global().scene.add(campfire);
+    }
+}
+exports.Campfire = Campfire;
 
 
 /***/ }),
@@ -8865,10 +8895,16 @@ exports.Chest = void 0;
 const global_1 = __webpack_require__(/*! ./global */ "./src/gameplay/global.ts");
 const sprite_object_1 = __webpack_require__(/*! ./sprite-object */ "./src/gameplay/sprite-object.ts");
 class Chest extends sprite_object_1.SpriteObject {
-    constructor(items) {
+    constructor(items, chunkData) {
         super();
         this.items = items;
+        this.chunk = chunkData;
         this.sprite = global_1.Global().assets.spriteChest;
+    }
+    open() {
+        global_1.Global().scene.remove(this);
+        this.chunk.removeChest(this);
+        return this.items;
     }
 }
 exports.Chest = Chest;
@@ -9047,10 +9083,19 @@ const rigidbody_1 = __webpack_require__(/*! ./rigidbody */ "./src/gameplay/rigid
 const tex_png_1 = __importDefault(__webpack_require__(/*! ../../assets/texture/tex.png */ "./assets/texture/tex.png"));
 const load_image_1 = __webpack_require__(/*! ../utils/load-image */ "./src/utils/load-image.ts");
 const mesh_1 = __webpack_require__(/*! ../utils/mesh */ "./src/utils/mesh.ts");
+const map_generator_1 = __webpack_require__(/*! ../map/map-generator */ "./src/map/map-generator.ts");
+const craft_1 = __webpack_require__(/*! ../ui/craft */ "./src/ui/craft.ts");
+const campfire_1 = __webpack_require__(/*! ./campfire */ "./src/gameplay/campfire.ts");
+const global_1 = __webpack_require__(/*! ./global */ "./src/gameplay/global.ts");
+const log_1 = __webpack_require__(/*! ../ui/log */ "./src/ui/log.ts");
 class Player extends rigidbody_1.Rigidbody {
     constructor(input, tilemap, session) {
         super(tilemap);
         this.moveSpeed = 5;
+        this.resources = new Map();
+        this.tools = [];
+        this.currentToolIdx = 0;
+        this.facing = zogra_renderer_1.vec2.down();
         this.input = input;
         this.session = session;
         this.on("update", this.update.bind(this));
@@ -9069,14 +9114,22 @@ class Player extends rigidbody_1.Rigidbody {
     }
     update(entity, time) {
         const moveInput = zogra_renderer_1.vec2.zero();
-        if (this.input.getKey(zogra_renderer_1.Keys.W))
+        if (this.input.getKey(zogra_renderer_1.Keys.W) || this.input.getKey(zogra_renderer_1.Keys.Up))
             moveInput.y += 1;
-        if (this.input.getKey(zogra_renderer_1.Keys.S))
+        if (this.input.getKey(zogra_renderer_1.Keys.S) || this.input.getKey(zogra_renderer_1.Keys.Down))
             moveInput.y -= 1;
-        if (this.input.getKey(zogra_renderer_1.Keys.A))
+        if (this.input.getKey(zogra_renderer_1.Keys.A) || this.input.getKey(zogra_renderer_1.Keys.Left))
             moveInput.x -= 1;
-        if (this.input.getKey(zogra_renderer_1.Keys.D))
+        if (this.input.getKey(zogra_renderer_1.Keys.D) || this.input.getKey(zogra_renderer_1.Keys.Right))
             moveInput.x += 1;
+        if (this.input.getKeyDown(zogra_renderer_1.Keys.W) || this.input.getKeyDown(zogra_renderer_1.Keys.Up))
+            this.facing = zogra_renderer_1.vec2.up();
+        if (this.input.getKeyDown(zogra_renderer_1.Keys.S) || this.input.getKeyDown(zogra_renderer_1.Keys.Down))
+            this.facing = zogra_renderer_1.vec2.down();
+        if (this.input.getKeyDown(zogra_renderer_1.Keys.A) || this.input.getKeyDown(zogra_renderer_1.Keys.Left))
+            this.facing = zogra_renderer_1.vec2.left();
+        if (this.input.getKeyDown(zogra_renderer_1.Keys.D) || this.input.getKeyDown(zogra_renderer_1.Keys.Right))
+            this.facing = zogra_renderer_1.vec2.right();
         if (this.input.getKeyDown(zogra_renderer_1.Keys.F2)) {
             const x = 1;
         }
@@ -9086,6 +9139,89 @@ class Player extends rigidbody_1.Rigidbody {
             pos: this.position,
             velocity: this.velocity
         });
+        if (this.input.getKeyDown(zogra_renderer_1.Keys.C)) {
+            this.craft();
+        }
+        else if (this.input.getKeyDown(zogra_renderer_1.Keys.E)) {
+            this.useTool();
+        }
+    }
+    craft() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const item = yield craft_1.craft(this.resources);
+            switch (item) {
+                case map_generator_1.ItemType.Campfire:
+                    campfire_1.Campfire.spawn(this.position);
+                    break;
+                case map_generator_1.ItemType.Flashlight:
+                    this.addTool(map_generator_1.ItemType.Flashlight);
+                    break;
+                case map_generator_1.ItemType.Pickaxe:
+                    this.addTool(map_generator_1.ItemType.Pickaxe);
+                    break;
+                case map_generator_1.ItemType.Radio:
+                    this.addTool(map_generator_1.ItemType.Radio);
+                    break;
+            }
+        });
+    }
+    getTool(type) {
+        for (const tool of this.tools) {
+            if (tool.type == type)
+                return tool;
+        }
+        return null;
+    }
+    addTool(type) {
+        let tool = this.getTool(type);
+        log_1.showLog(`获得 [${map_generator_1.ItemName[type]}] x1`);
+        if (!tool) {
+            tool = {
+                type: type,
+                count: 1,
+                endure: 1
+            };
+            this.tools.push(tool);
+        }
+        else {
+            tool.count++;
+        }
+    }
+    useTool() {
+        const chunk = global_1.Global().chunksManager.getChunkAt(this.position.toVec2());
+        for (const chest of chunk.chests) {
+            const dir = zogra_renderer_1.minus(chest.position, this.position).toVec2();
+            const distance = dir.magnitude;
+            if (distance < 1 || (distance <= 2 && dir.dot(this.facing) >= 0.5)) {
+                console.log(`open chest at ${distance}`);
+                this.openChest(chest);
+                return;
+            }
+        }
+    }
+    openChest(chest) {
+        const items = chest.open();
+        for (const itemType of items) {
+            switch (itemType) {
+                case map_generator_1.ItemType.Battery:
+                case map_generator_1.ItemType.Glass:
+                case map_generator_1.ItemType.Iron:
+                case map_generator_1.ItemType.PCB:
+                case map_generator_1.ItemType.Petrol:
+                case map_generator_1.ItemType.Wire:
+                case map_generator_1.ItemType.Wood:
+                    const number = this.resources.get(itemType) || 0;
+                    this.resources.set(itemType, number + 1);
+                    log_1.showLog(`获得 [${map_generator_1.ItemName[itemType]}] x1`);
+                    break;
+                case map_generator_1.ItemType.Flashlight:
+                case map_generator_1.ItemType.Paint:
+                case map_generator_1.ItemType.Pickaxe:
+                case map_generator_1.ItemType.Radio:
+                    this.addTool(itemType);
+                    break;
+            }
+        }
     }
 }
 exports.Player = Player;
@@ -9178,9 +9314,9 @@ class Rigidbody extends zogra_renderer_1.RenderObject {
         return [hit, minDistance];
     }
     isColliderTile(pos) {
-        return false;
-        // const tile = this.tilemap.getTile(pos);
-        // return tile ? tile.collide : false;
+        // return false;
+        const tile = this.tilemap.getTile(pos);
+        return tile ? tile.collide : false;
     }
 }
 exports.Rigidbody = Rigidbody;
@@ -9255,8 +9391,11 @@ const engine = new zogra_renderer_1.ZograEngine(canvas);
 const render_pipeline_1 = __webpack_require__(/*! ./rendering/render-pipeline */ "./src/rendering/render-pipeline.ts");
 const game_1 = __webpack_require__(/*! ./game */ "./src/game.ts");
 const session_1 = __webpack_require__(/*! ./network/session */ "./src/network/session.ts");
+const log_1 = __webpack_require__(/*! ./ui/log */ "./src/ui/log.ts");
 const session = new session_1.GameSession("ws://found.sardinefish.com/ws", "User");
+log_1.showLog("connected");
 session.onStart = () => {
+    log_1.showLog("game start");
     const renderPipeline = new render_pipeline_1.RenderPipeline();
     engine.renderPipeline = renderPipeline;
     debug_1.initDebugLyaerRenderer(renderPipeline.debuglayer);
@@ -9279,14 +9418,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChunkData = exports.MapGenerator = exports.ItemType = void 0;
+exports.ChunkData = exports.ChunksManager = exports.ItemName = exports.ItemType = void 0;
 const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
 const seedrandom_1 = __importDefault(__webpack_require__(/*! seedrandom */ "./node_modules/seedrandom/index.js"));
 const math_1 = __webpack_require__(/*! ../utils/math */ "./src/utils/math.ts");
 const noisejs_1 = __importDefault(__webpack_require__(/*! noisejs */ "./node_modules/noisejs/index.js"));
 const chest_1 = __webpack_require__(/*! ../gameplay/chest */ "./src/gameplay/chest.ts");
 const global_1 = __webpack_require__(/*! ../gameplay/global */ "./src/gameplay/global.ts");
-const chunk_id_1 = __webpack_require__(/*! ../utils/chunk-id */ "./src/utils/chunk-id.ts");
+const chunk_1 = __webpack_require__(/*! ../utils/chunk */ "./src/utils/chunk.ts");
 const Noise = noisejs_1.default.Noise;
 var ItemType;
 (function (ItemType) {
@@ -9297,20 +9436,40 @@ var ItemType;
     ItemType["Paint"] = "paint";
     ItemType["Battery"] = "battery";
     ItemType["Petrol"] = "petrol";
+    ItemType["Wood"] = "wood";
+    ItemType["Flashlight"] = "flashlight";
+    ItemType["Campfire"] = "campfire";
+    ItemType["Pickaxe"] = "pickaxe";
+    ItemType["Radio"] = "radio";
 })(ItemType = exports.ItemType || (exports.ItemType = {}));
-const ItemWeight = {
-    [ItemType.Paint]: 0.3,
-    [ItemType.Battery]: 0.2,
+exports.ItemName = {
+    [ItemType.Glass]: "玻璃",
+    [ItemType.PCB]: "电子元件",
+    [ItemType.Wire]: "导线",
+    [ItemType.Iron]: "金属",
+    [ItemType.Paint]: "记号笔",
+    [ItemType.Battery]: "电池",
+    [ItemType.Petrol]: "汽油",
+    [ItemType.Wood]: "木头",
+    [ItemType.Flashlight]: "手电筒",
+    [ItemType.Campfire]: "火堆",
+    [ItemType.Pickaxe]: "铁镐",
+    [ItemType.Radio]: "通信器",
+};
+const ItemCount = {
+    [ItemType.Paint]: 1,
+    [ItemType.Wood]: 20.6,
+    [ItemType.Battery]: 0.5,
     [ItemType.Glass]: 0.1,
-    [ItemType.Iron]: 0.1,
+    [ItemType.Iron]: 0.2,
     [ItemType.Petrol]: 0.1,
     [ItemType.Wire]: 0.1,
-    [ItemType.PCB]: 0.1,
+    [ItemType.PCB]: 0.05,
 };
-const ItemAccumWeight = Object.keys(ItemWeight)
+const ItemAccumWeight = Object.keys(ItemCount)
     .map(item => ({
     item: item,
-    weight: ItemWeight[item]
+    weight: ItemCount[item]
 }))
     .sort((a, b) => a.weight - b.weight);
 {
@@ -9330,7 +9489,7 @@ const TileWall = {
     texture_offset: zogra_renderer_1.vec2(0, 2),
 };
 const ChunkSize = 16;
-class MapGenerator {
+class ChunksManager {
     constructor(tilemap, seed) {
         this.chunks = new Map();
         this.previousLoadedChunk = new Map();
@@ -9352,9 +9511,13 @@ class MapGenerator {
             }
         }
     }
+    getChunkAt(pos) {
+        const [chunkPos, offset] = chunk_1.calcChunkPos(pos, ChunkSize);
+        return this.loadChunk(chunkPos);
+    }
     loadChunk(chunkPos) {
         chunkPos = math_1.floor2(chunkPos);
-        let chunkID = chunk_id_1.calcChunkID(chunkPos);
+        let chunkID = chunk_1.calcChunkID(chunkPos);
         let chunkData = this.chunks.get(chunkID);
         if (!this.previousLoadedChunk.has(chunkID)) {
             if (chunkData)
@@ -9369,9 +9532,10 @@ class MapGenerator {
             chunkData.generateItems();
         }
         this.loadedChunk.set(chunkID, chunkData);
+        return chunkData;
     }
 }
-exports.MapGenerator = MapGenerator;
+exports.ChunksManager = ChunksManager;
 class ChunkData {
     constructor(seed, chunkPos) {
         this.chests = [];
@@ -9399,25 +9563,31 @@ class ChunkData {
     }
     generateItems() {
         var _a;
-        const chestsCount = 8; //(8 + 8 * this.prng.quick());
+        const chestsCount = (1 + 3 * this.prng.quick());
         const tilemap = global_1.Global().tilemap;
         this.chests = [];
         for (let i = 0; i < chestsCount; i++) {
             const pos = math_1.floor2(zogra_renderer_1.vec2(this.prng.quick() * ChunkSize, this.prng.quick() * ChunkSize));
-            if ((_a = tilemap.getTile(pos)) === null || _a === void 0 ? void 0 : _a.collide)
+            if ((_a = tilemap.getTile(zogra_renderer_1.mul(this.chunkPos, ChunkSize).plus(pos))) === null || _a === void 0 ? void 0 : _a.collide)
                 continue;
+            let count = 0;
             const items = [];
-            const t = this.prng.quick();
-            for (const item of ItemAccumWeight) {
-                if (t < item.weight)
-                    items.push(item.item);
+            for (let j = 0; j < 5; j++) {
+                for (const item of Object.keys(ItemCount)) {
+                    if (this.prng.quick() < ItemCount[item] - count)
+                        items.push(item);
+                }
+                count++;
             }
-            const chest = new chest_1.Chest(items);
+            const chest = new chest_1.Chest(items, this);
             chest.position = zogra_renderer_1.mul(this.chunkPos, ChunkSize).plus(pos).plus(zogra_renderer_1.vec2(0.5)).toVec3(2);
             this.chests.push(chest);
             global_1.Global().scene.add(chest);
         }
-        console.log(`gen ${this.chests.length} for ${this.chunkPos}`);
+        // console.log(`gen ${this.chests.length} for ${this.chunkPos}`);
+    }
+    removeChest(chest) {
+        this.chests = this.chests.filter(c => c !== chest);
     }
 }
 exports.ChunkData = ChunkData;
@@ -9449,7 +9619,11 @@ const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-rend
 const _2d_vert_glsl_1 = __importDefault(__webpack_require__(/*! ../shader/2d-vert.glsl */ "./src/shader/2d-vert.glsl"));
 const procedual_light_glsl_1 = __importDefault(__webpack_require__(/*! ../shader/procedual-light.glsl */ "./src/shader/procedual-light.glsl"));
 const blit_glsl_1 = __importDefault(__webpack_require__(/*! ../shader/blit.glsl */ "./src/shader/blit.glsl"));
-let ProceduralLightMaterial = class ProceduralLightMaterial extends zogra_renderer_1.MaterialFromShader(new zogra_renderer_1.Shader(_2d_vert_glsl_1.default, procedual_light_glsl_1.default)) {
+let ProceduralLightMaterial = class ProceduralLightMaterial extends zogra_renderer_1.MaterialFromShader(new zogra_renderer_1.Shader(_2d_vert_glsl_1.default, procedual_light_glsl_1.default, {
+    depth: zogra_renderer_1.DepthTest.Disable,
+    blend: [zogra_renderer_1.Blending.One, zogra_renderer_1.Blending.One],
+    zWrite: false,
+})) {
 };
 ProceduralLightMaterial = __decorate([
     zogra_renderer_1.materialDefine
@@ -9710,7 +9884,7 @@ class RenderPipeline {
                 context.renderer.drawMesh(obj.meshes[i], modelMatrix, mat);
             }
         }
-        // this.renderLight(context, data);
+        this.renderLight(context, data);
         this.debuglayer.render(context, data);
         camera.__postRender(context);
     }
@@ -9794,7 +9968,7 @@ module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vCo
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vColor;\r\nin vec4 vPos;\r\nin vec2 vUV;\r\n\r\nuniform sampler2D uMainTex;\r\nuniform vec4 uColor;\r\n\r\nout vec4 fragColor;\r\n\r\nvoid main()\r\n{\r\n    vec2 uv = (vUV - vec2(0.5)) * vec2(2);\r\n    float r = length(uv);\r\n    float light = 1.0 - r;\r\n    vec3 color = texture(uMainTex, vUV.xy).rgb;\r\n    // color = color * vec3(uColor);\r\n    fragColor = vec4(light, light, light, 1.0);\r\n}";
+module.exports = "#version 300 es\r\nprecision mediump float;\r\n\r\nin vec4 vColor;\r\nin vec4 vPos;\r\nin vec2 vUV;\r\n\r\nuniform sampler2D uMainTex;\r\nuniform vec4 uColor;\r\n\r\nout vec4 fragColor;\r\n\r\nvoid main()\r\n{\r\n    vec2 uv = (vUV - vec2(0.5)) * vec2(2);\r\n    float r = length(uv);\r\n    float light = pow(max(1.0 - r, 0.0), 2.0);\r\n    vec3 color = texture(uMainTex, vUV.xy).rgb;\r\n    // color = color * vec3(uColor);\r\n    fragColor = vec4(light, light, light, 1.0);\r\n}";
 
 /***/ }),
 
@@ -9833,7 +10007,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Chunk = exports.Tilemap = void 0;
 const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
 const tilemap_1 = __webpack_require__(/*! ../material/tilemap */ "./src/material/tilemap.ts");
-const chunk_id_1 = __webpack_require__(/*! ../utils/chunk-id */ "./src/utils/chunk-id.ts");
+const chunk_1 = __webpack_require__(/*! ../utils/chunk */ "./src/utils/chunk.ts");
 const math_1 = __webpack_require__(/*! ../utils/math */ "./src/utils/math.ts");
 const ChunkSize = 16;
 // type Chunk = Array<TileData | null>;
@@ -9875,7 +10049,7 @@ class Tilemap extends zogra_renderer_1.RenderObject {
         return [minCorner, zogra_renderer_1.plus(maxCorner, 1)];
     }
     getOrCreateChunk(chunkPos) {
-        const idx = chunk_id_1.calcChunkID(chunkPos);
+        const idx = chunk_1.calcChunkID(chunkPos);
         let chunk = this.chunks.get(idx);
         if (!chunk) {
             chunk = new Chunk();
@@ -9885,12 +10059,11 @@ class Tilemap extends zogra_renderer_1.RenderObject {
         return chunk;
     }
     getChunk(chunkPos) {
-        const idx = chunk_id_1.calcChunkID(chunkPos);
+        const idx = chunk_1.calcChunkID(chunkPos);
         return this.chunks.get(idx);
     }
     chunkPos(pos) {
-        const floorOffset = zogra_renderer_1.vec2(pos.x < 0 ? /*1*/ 0 : 0, pos.y < 0 ? /*1*/ 0 : 0);
-        return [zogra_renderer_1.minus(math_1.floor2(zogra_renderer_1.div(pos, zogra_renderer_1.vec2(ChunkSize, ChunkSize))), floorOffset), zogra_renderer_1.vec2(math_1.floorReminder(pos.x, ChunkSize), math_1.floorReminder(pos.y, ChunkSize))];
+        return chunk_1.calcChunkPos(pos, ChunkSize);
     }
 }
 exports.Tilemap = Tilemap;
@@ -9955,17 +10128,160 @@ function createChunkMesh() {
 
 /***/ }),
 
-/***/ "./src/utils/chunk-id.ts":
-/*!*******************************!*\
-  !*** ./src/utils/chunk-id.ts ***!
-  \*******************************/
+/***/ "./src/ui/craft.ts":
+/*!*************************!*\
+  !*** ./src/ui/craft.ts ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.craft = void 0;
+const map_generator_1 = __webpack_require__(/*! ../map/map-generator */ "./src/map/map-generator.ts");
+const $ = (selector) => document.querySelector(selector);
+let UIShown = false;
+function craft(resources) {
+    if (UIShown)
+        return (() => __awaiter(this, void 0, void 0, function* () { return null; }))();
+    UIShown = true;
+    const close = () => {
+        $("#craft").style.display = "none";
+        UIShown = false;
+    };
+    $("#craft").style.display = "flex";
+    return new Promise((resolve, reject) => {
+        const campfire = {
+            wood: 10,
+        };
+        const pickaxe = {
+            wood: 2,
+            iron: 5,
+        };
+        const flashlight = {
+            glass: 1,
+            iron: 2,
+            battery: 2,
+        };
+        const radio = {
+            iron: 2,
+            battery: 5,
+            pcb: 3
+        };
+        let wood = resources.get(map_generator_1.ItemType.Wood) || 0;
+        let glass = resources.get(map_generator_1.ItemType.Glass) || 0;
+        let battery = resources.get(map_generator_1.ItemType.Battery) || 0;
+        let iron = resources.get(map_generator_1.ItemType.Iron) || 0;
+        let pcb = resources.get(map_generator_1.ItemType.PCB) || 0;
+        const save = () => {
+            resources.set(map_generator_1.ItemType.Wood, wood);
+            resources.set(map_generator_1.ItemType.Glass, glass);
+            resources.set(map_generator_1.ItemType.Battery, battery);
+            resources.set(map_generator_1.ItemType.Iron, iron);
+            resources.set(map_generator_1.ItemType.PCB, pcb);
+        };
+        document.querySelector("#craft #campfire .button").onclick = () => {
+            if (wood >= campfire.wood) {
+                wood -= campfire.wood;
+                save();
+                resolve(map_generator_1.ItemType.Campfire);
+                close();
+            }
+        };
+        $("#craft #flashlight .button").onclick = () => {
+            if (glass >= flashlight.glass && battery >= flashlight.battery && iron >= flashlight.iron) {
+                glass -= flashlight.glass;
+                battery -= flashlight.battery;
+                iron -= flashlight.iron;
+                save();
+                resolve(map_generator_1.ItemType.Campfire);
+                close();
+            }
+        };
+        $("#craft #pickaxe .button").onclick = () => {
+            if (wood >= pickaxe.wood && iron >= pickaxe.iron) {
+                wood -= pickaxe.wood;
+                iron -= pickaxe.iron;
+                save();
+                resolve(map_generator_1.ItemType.Pickaxe);
+                close();
+            }
+        };
+        $("#craft #radio .button").onclick = () => {
+            if (iron >= radio.iron && battery >= radio.battery && pcb >= radio.pcb) {
+                iron -= radio.iron;
+                battery -= radio.battery;
+                pcb -= radio.pcb;
+                save();
+                resolve(map_generator_1.ItemType.Radio);
+                close();
+            }
+        };
+        $("#craft .close").onclick = () => {
+            resolve(null);
+            close();
+        };
+        document.querySelectorAll("#craft .wood").forEach(el => el.innerHTML = wood.toString());
+        document.querySelectorAll("#craft .iron").forEach(el => el.innerHTML = iron.toString());
+        document.querySelectorAll("#craft .glass").forEach(el => el.innerHTML = glass.toString());
+        document.querySelectorAll("#craft .pcb").forEach(el => el.innerHTML = pcb.toString());
+        document.querySelectorAll("#craft .battery").forEach(el => el.innerHTML = battery.toString());
+    });
+}
+exports.craft = craft;
+
+
+/***/ }),
+
+/***/ "./src/ui/log.ts":
+/*!***********************!*\
+  !*** ./src/ui/log.ts ***!
+  \***********************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcChunkID = void 0;
+exports.showLog = void 0;
+const container = document.querySelector("#logs");
+const $ = (selector) => document.querySelector(selector);
+function showLog(text) {
+    const p = document.createElement('p');
+    p.innerText = text;
+    container.appendChild(p);
+    setTimeout(() => {
+        p.remove();
+    }, 3000);
+}
+exports.showLog = showLog;
+
+
+/***/ }),
+
+/***/ "./src/utils/chunk.ts":
+/*!****************************!*\
+  !*** ./src/utils/chunk.ts ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.calcChunkPos = exports.calcChunkID = void 0;
+const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
+const math_1 = __webpack_require__(/*! ./math */ "./src/utils/math.ts");
 function calcChunkID(chunkPos) {
     if (chunkPos.x == -0)
         chunkPos.x = 0;
@@ -9976,6 +10292,11 @@ function calcChunkID(chunkPos) {
     return (signX << 31) | (Math.abs(Math.floor(chunkPos.x)) << 16) | (signY << 15) | Math.abs(Math.floor(chunkPos.y));
 }
 exports.calcChunkID = calcChunkID;
+function calcChunkPos(pos, chunkSize) {
+    const floorOffset = zogra_renderer_1.vec2(pos.x < 0 ? /*1*/ 0 : 0, pos.y < 0 ? /*1*/ 0 : 0);
+    return [zogra_renderer_1.minus(math_1.floor2(zogra_renderer_1.div(pos, zogra_renderer_1.vec2(chunkSize, chunkSize))), floorOffset), zogra_renderer_1.vec2(math_1.floorReminder(pos.x, chunkSize), math_1.floorReminder(pos.y, chunkSize))];
+}
+exports.calcChunkPos = calcChunkPos;
 
 
 /***/ }),

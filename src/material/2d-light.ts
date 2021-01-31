@@ -4,7 +4,11 @@ import fragLight from "../shader/procedual-light.glsl";
 import fragBlit from "../shader/blit.glsl";
 
 @materialDefine
-export class ProceduralLightMaterial extends MaterialFromShader(new Shader(vert, fragLight))
+export class ProceduralLightMaterial extends MaterialFromShader(new Shader(vert, fragLight, {
+    depth: DepthTest.Disable,
+    blend: [Blending.One, Blending.One],
+    zWrite: false,
+}))
 {
 }
 

@@ -5,7 +5,7 @@ import { floor2 } from "../utils/math";
 import _NoiseImport from 'noisejs';
 import { Chest } from "../gameplay/chest";
 import { Global } from "../gameplay/global";
-import { calcChunkID } from "../utils/chunk-id";
+import { calcChunkID, calcChunkPos } from "../utils/chunk";
 
 const Noise = (_NoiseImport as any).Noise as typeof _NoiseImport;
 
@@ -18,22 +18,42 @@ export enum ItemType
     Paint = "paint",
     Battery = "battery",
     Petrol = "petrol",
+    Wood = "wood",
+    Flashlight = "flashlight",
+    Campfire = "campfire",
+    Pickaxe = "pickaxe",
+    Radio = "radio",
+}
+export const ItemName: { [key in ItemType]: string } = {
+    [ItemType.Glass] : "玻璃",
+    [ItemType.PCB] : "电子元件",
+    [ItemType.Wire] : "导线",
+    [ItemType.Iron] : "金属",
+    [ItemType.Paint] : "记号笔",
+    [ItemType.Battery] : "电池",
+    [ItemType.Petrol] : "汽油",
+    [ItemType.Wood] : "木头",
+    [ItemType.Flashlight] : "手电筒",
+    [ItemType.Campfire] : "火堆",
+    [ItemType.Pickaxe] : "铁镐",
+    [ItemType.Radio] : "通信器",
 }
 
-const ItemWeight: { [key: string]: number} = {
-    [ItemType.Paint]: 0.3,
-    [ItemType.Battery]: 0.2,
+const ItemCount: { [key: string]: number} = {
+    [ItemType.Paint]: 1,
+    [ItemType.Wood]: 20.6,
+    [ItemType.Battery]: 0.5,
     [ItemType.Glass]: 0.1,
-    [ItemType.Iron]: 0.1,
+    [ItemType.Iron]: 0.2,
     [ItemType.Petrol]: 0.1,
     [ItemType.Wire]: 0.1,
-    [ItemType.PCB]: 0.1,
+    [ItemType.PCB]: 0.05,
 }
 
-const ItemAccumWeight = Object.keys(ItemWeight)
+const ItemAccumWeight = Object.keys(ItemCount)
     .map(item => ({
         item: item as ItemType,
-        weight: ItemWeight[item]
+        weight: ItemCount[item]
     }))
     .sort((a, b) => a.weight - b.weight);
 {
@@ -58,7 +78,7 @@ const TileWall: TileData = {
 };
 const ChunkSize = 16;
 
-export class MapGenerator
+export class ChunksManager
 {
     seed: string;
     tilemap: Tilemap;
@@ -94,7 +114,13 @@ export class MapGenerator
         }
     }
 
-    private loadChunk(chunkPos: vec2)
+    getChunkAt(pos: vec2)
+    {
+        const [chunkPos, offset] = calcChunkPos(pos, ChunkSize);
+        return this.loadChunk(chunkPos);
+    }
+
+    private loadChunk(chunkPos: vec2): ChunkData
     {
         chunkPos = floor2(chunkPos);
         let chunkID = calcChunkID(chunkPos);
@@ -116,6 +142,8 @@ export class MapGenerator
             chunkData.generateItems();
         }
         this.loadedChunk.set(chunkID, chunkData);
+
+        return chunkData;
     }
 }
 
@@ -158,30 +186,39 @@ export class ChunkData
 
     generateItems()
     {
-        const chestsCount = 8;//(8 + 8 * this.prng.quick());
+        const chestsCount = (1 + 3 * this.prng.quick());
         const tilemap = Global().tilemap;
         this.chests = [];
         for (let i = 0; i < chestsCount; i++)
         {
             const pos = floor2(vec2(this.prng.quick() * ChunkSize, this.prng.quick() * ChunkSize));
 
-            if (tilemap.getTile(pos)?.collide)
+            if (tilemap.getTile(mul(this.chunkPos, ChunkSize).plus(pos))?.collide)
                 continue;
             
+            let count = 0;
             const items: ItemType[] = [];
-            const t = this.prng.quick();
-            for (const item of ItemAccumWeight)
+            for (let j = 0; j < 5; j++)
             {
-                if (t < item.weight)
-                    items.push(item.item);
+                for (const item of Object.keys(ItemCount))
+                {
+                    if (this.prng.quick() < ItemCount[item] - count)
+                        items.push(item as ItemType);
+                }
+                count++;
             }
 
-            const chest = new Chest(items);
+            const chest = new Chest(items, this);
             chest.position = mul(this.chunkPos, ChunkSize).plus(pos).plus(vec2(0.5)).toVec3(2);
             this.chests.push(chest);
             Global().scene.add(chest);
         }
 
-        console.log(`gen ${this.chests.length} for ${this.chunkPos}`);
+        // console.log(`gen ${this.chests.length} for ${this.chunkPos}`);
+    }
+
+    removeChest(chest: Chest)
+    {
+        this.chests = this.chests.filter(c => c !== chest);
     }
 }

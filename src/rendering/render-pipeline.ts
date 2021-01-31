@@ -1,5 +1,6 @@
 import { Camera, Color, DebugLayerRenderer, mat4, Material, RenderContext, RenderData, RenderOrder, RenderTexture, vec3, ZograRenderPipeline } from "zogra-renderer";
 import { RenderTarget } from "zogra-renderer/dist/core/render-target";
+import { TextureFormat } from "zogra-renderer/dist/core/texture-format";
 import { ConstructorType } from "zogra-renderer/dist/utils/util";
 import { Light2D } from "../gameplay/light";
 import { LightComposeMaterial } from "../material/2d-light";
@@ -60,7 +61,7 @@ export class RenderPipeline implements ZograRenderPipeline
             }
         }
 
-        // this.renderLight(context, data);
+        this.renderLight(context, data);
 
         this.debuglayer.render(context, data);
         camera.__postRender(context);
