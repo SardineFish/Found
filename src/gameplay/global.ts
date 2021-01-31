@@ -35,6 +35,7 @@ export function Global()
 interface Assets
 {
     spriteChest: Sprite,
+    mark: Sprite,
 }
 
 export async function loadAssets()
@@ -49,7 +50,15 @@ export async function loadAssets()
             texture.setData(img);
 
             assets.spriteChest = new Sprite(texture, vec2(4, 4), vec2(0, 3));
-        })
+        }),
+        // mark
+        loadImage(checkboard).then(img =>
+        {
+            const texture = new Texture2D();
+            texture.setData(img);
+            assets.mark = new Sprite(texture, vec2(4, 4), vec2(2, 3));
+
+        }),
     ]);
 
     return assets;

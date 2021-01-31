@@ -12,6 +12,8 @@ import { Campfire } from "./campfire";
 import { Global } from "./global";
 import { Chest } from "./chest";
 import { showLog } from "../ui/log";
+import { updateTools as updateToolsUI } from "../ui/tools";
+import { Mark } from "./mark";
 
 export interface Tool
 {
@@ -26,7 +28,7 @@ export class Player extends Rigidbody
     input: InputManager;
     session: GameSession;
     resources: Map<ItemType, number> = new Map();
-    tools: Tool[] = [];
+    tools: Tool[] = [{type: ItemType.None, count: 0, endure: 1}];
     currentToolIdx: number = 0;
     facing: vec2 = vec2.down();
 
@@ -39,6 +41,7 @@ export class Player extends Rigidbody
         this.on("update", this.update.bind(this));
 
         this.init();
+        updateToolsUI(this.tools, this.currentToolIdx);
     }
 
     async init()
@@ -94,7 +97,23 @@ export class Player extends Rigidbody
         }
         else if (this.input.getKeyDown(Keys.E))
         {
-            this.useTool();
+            this.useTool(this.position.toVec2());
+        }
+        else if (this.input.getKeyDown(Keys.Mouse0))
+        {
+            const pos = Global().camera.screenToWorld(this.input.pointerPosition).toVec2();
+            if (minus(pos, this.position.toVec2()).magnitude < 1.6)
+                this.useTool(pos);
+        }
+        if (this.input.wheelDelta > 0)
+        {
+            this.currentToolIdx = (this.currentToolIdx + 1) % this.tools.length;
+            updateToolsUI(this.tools, this.currentToolIdx);
+        }
+        else if (this.input.wheelDelta < 0)
+        {
+            this.currentToolIdx = (this.currentToolIdx - 1 + this.tools.length) % this.tools.length;
+            updateToolsUI(this.tools, this.currentToolIdx);
         }
     }
 
@@ -145,9 +164,10 @@ export class Player extends Rigidbody
         {
             tool.count++;
         }
+        updateToolsUI(this.tools, this.currentToolIdx);
     }
 
-    private useTool()
+    private useTool(pos: vec2)
     {
         const chunk = Global().chunksManager.getChunkAt(this.position.toVec2());
         for (const chest of chunk.chests)
@@ -160,6 +180,28 @@ export class Player extends Rigidbody
                 this.openChest(chest);
                 return;
             }
+        }
+
+        const use = (tool: Tool) =>
+        {
+            tool.count--;
+            if (tool.count <= 0)
+            {
+                this.tools = this.tools.filter(t => t !== tool);
+                this.currentToolIdx = 0;
+            }
+            updateToolsUI(this.tools, this.currentToolIdx);
+        };
+
+        const tool = this.tools[this.currentToolIdx];
+        switch (tool.type)
+        {
+            case ItemType.Paint:
+                Mark.makeOnGround(pos);
+                use(tool);
+                break;
+            case ItemType.Pickaxe:
+                break;
         }
     }
 

@@ -11,6 +11,7 @@ const Noise = (_NoiseImport as any).Noise as typeof _NoiseImport;
 
 export enum ItemType
 {
+    None = "none",
     Glass = "glass",
     PCB = "pcb",
     Wire = "wire",
@@ -25,6 +26,7 @@ export enum ItemType
     Radio = "radio",
 }
 export const ItemName: { [key in ItemType]: string } = {
+    [ItemType.None] : "[空手]",
     [ItemType.Glass] : "玻璃",
     [ItemType.PCB] : "电子元件",
     [ItemType.Wire] : "导线",
@@ -42,12 +44,12 @@ export const ItemName: { [key in ItemType]: string } = {
 const ItemCount: { [key: string]: number} = {
     [ItemType.Paint]: 1,
     [ItemType.Wood]: 20.6,
-    [ItemType.Battery]: 0.5,
-    [ItemType.Glass]: 0.1,
-    [ItemType.Iron]: 0.2,
-    [ItemType.Petrol]: 0.1,
-    [ItemType.Wire]: 0.1,
-    [ItemType.PCB]: 0.05,
+    [ItemType.Battery]: 10,
+    [ItemType.Glass]: 10,
+    [ItemType.Iron]: 10,
+    [ItemType.Petrol]: 10,
+    [ItemType.Wire]:10,
+    [ItemType.PCB]: 10,
 }
 
 const ItemAccumWeight = Object.keys(ItemCount)

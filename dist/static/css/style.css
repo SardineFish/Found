@@ -78,6 +78,23 @@ ul {
     margin: 2em;
 }
 
+#tools-panel {
+    position: absolute;
+    right: 2em;
+    color: gray;
+    text-align: right;
+}
+#tools-panel .header {
+    text-align: right;
+    font-size: 2em;
+}
+.tool+.active {
+    font-weight: bolder;
+}
+.tool,.active::before {
+    content: "> ";
+}
+
 .button {
     align-items: center;
     justify-self: center;

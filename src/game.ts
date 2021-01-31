@@ -56,25 +56,25 @@ export async function start(engine: ZograEngine, session: GameSession)
 
     let light = new Light2D();
     engine.scene.add(light, player);
-    light.size = 8;
+    light.size = 12;
 
     let count = 0;
     engine.on("update", () =>
     {
         input.update();
-        if (input.getKeyDown(Keys.Mouse0))
-        {
-            let pos = camera.screenToWorld(input.pointerPosition);
-            console.log(pos);
+        // if (input.getKeyDown(Keys.Mouse0))
+        // {
+        //     let pos = camera.screenToWorld(input.pointerPosition);
+        //     console.log(pos);
 
-            count++;
-            let uv = vec2(Math.floor(count / 4), count % 4);
-            tilemap.setTile(pos.toVec2(), {
-                collide: false,
-                texture_offset: uv.clone()
-            });
+        //     count++;
+        //     let uv = vec2(Math.floor(count / 4), count % 4);
+        //     tilemap.setTile(pos.toVec2(), {
+        //         collide: false,
+        //         texture_offset: uv.clone()
+        //     });
 
-        }
+        // }
 
         generator.update();
     });

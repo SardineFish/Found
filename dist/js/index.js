@@ -8817,20 +8817,21 @@ function start(engine, session) {
         engine.scene.add(remotePlayer);
         let light = new light_1.Light2D();
         engine.scene.add(light, player);
-        light.size = 8;
+        light.size = 12;
         let count = 0;
         engine.on("update", () => {
             input.update();
-            if (input.getKeyDown(zogra_renderer_1.Keys.Mouse0)) {
-                let pos = camera.screenToWorld(input.pointerPosition);
-                console.log(pos);
-                count++;
-                let uv = zogra_renderer_1.vec2(Math.floor(count / 4), count % 4);
-                tilemap.setTile(pos.toVec2(), {
-                    collide: false,
-                    texture_offset: uv.clone()
-                });
-            }
+            // if (input.getKeyDown(Keys.Mouse0))
+            // {
+            //     let pos = camera.screenToWorld(input.pointerPosition);
+            //     console.log(pos);
+            //     count++;
+            //     let uv = vec2(Math.floor(count / 4), count % 4);
+            //     tilemap.setTile(pos.toVec2(), {
+            //         collide: false,
+            //         texture_offset: uv.clone()
+            //     });
+            // }
             generator.update();
         });
         global_1.initGlobalEntities({
@@ -8957,7 +8958,13 @@ function loadAssets() {
                 const texture = new zogra_renderer_1.Texture2D();
                 texture.setData(img);
                 assets.spriteChest = new sprite_1.Sprite(texture, zogra_renderer_1.vec2(4, 4), zogra_renderer_1.vec2(0, 3));
-            })
+            }),
+            // mark
+            load_image_1.loadImage(checkboard_png_1.default).then(img => {
+                const texture = new zogra_renderer_1.Texture2D();
+                texture.setData(img);
+                assets.mark = new sprite_1.Sprite(texture, zogra_renderer_1.vec2(4, 4), zogra_renderer_1.vec2(2, 3));
+            }),
         ]);
         return assets;
     });
@@ -8995,6 +9002,38 @@ class Light2D extends zogra_renderer_1.Entity {
     }
 }
 exports.Light2D = Light2D;
+
+
+/***/ }),
+
+/***/ "./src/gameplay/mark.ts":
+/*!******************************!*\
+  !*** ./src/gameplay/mark.ts ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Mark = void 0;
+const zogra_renderer_1 = __webpack_require__(/*! zogra-renderer */ "./zogra-renderer/dist/index.js");
+const math_1 = __webpack_require__(/*! ../utils/math */ "./src/utils/math.ts");
+const global_1 = __webpack_require__(/*! ./global */ "./src/gameplay/global.ts");
+const sprite_object_1 = __webpack_require__(/*! ./sprite-object */ "./src/gameplay/sprite-object.ts");
+class Mark extends sprite_object_1.SpriteObject {
+    constructor() {
+        super();
+        this.sprite = global_1.Global().assets.mark;
+    }
+    static makeOnGround(pos) {
+        pos = math_1.floor2(pos).plus(zogra_renderer_1.vec2(.5));
+        const mark = new Mark();
+        mark.position = pos.toVec3(1);
+        global_1.Global().scene.add(mark);
+    }
+}
+exports.Mark = Mark;
 
 
 /***/ }),
@@ -9088,18 +9127,21 @@ const craft_1 = __webpack_require__(/*! ../ui/craft */ "./src/ui/craft.ts");
 const campfire_1 = __webpack_require__(/*! ./campfire */ "./src/gameplay/campfire.ts");
 const global_1 = __webpack_require__(/*! ./global */ "./src/gameplay/global.ts");
 const log_1 = __webpack_require__(/*! ../ui/log */ "./src/ui/log.ts");
+const tools_1 = __webpack_require__(/*! ../ui/tools */ "./src/ui/tools.ts");
+const mark_1 = __webpack_require__(/*! ./mark */ "./src/gameplay/mark.ts");
 class Player extends rigidbody_1.Rigidbody {
     constructor(input, tilemap, session) {
         super(tilemap);
         this.moveSpeed = 5;
         this.resources = new Map();
-        this.tools = [];
+        this.tools = [{ type: map_generator_1.ItemType.None, count: 0, endure: 1 }];
         this.currentToolIdx = 0;
         this.facing = zogra_renderer_1.vec2.down();
         this.input = input;
         this.session = session;
         this.on("update", this.update.bind(this));
         this.init();
+        tools_1.updateTools(this.tools, this.currentToolIdx);
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -9143,7 +9185,20 @@ class Player extends rigidbody_1.Rigidbody {
             this.craft();
         }
         else if (this.input.getKeyDown(zogra_renderer_1.Keys.E)) {
-            this.useTool();
+            this.useTool(this.position.toVec2());
+        }
+        else if (this.input.getKeyDown(zogra_renderer_1.Keys.Mouse0)) {
+            const pos = global_1.Global().camera.screenToWorld(this.input.pointerPosition).toVec2();
+            if (zogra_renderer_1.minus(pos, this.position.toVec2()).magnitude < 1.6)
+                this.useTool(pos);
+        }
+        if (this.input.wheelDelta > 0) {
+            this.currentToolIdx = (this.currentToolIdx + 1) % this.tools.length;
+            tools_1.updateTools(this.tools, this.currentToolIdx);
+        }
+        else if (this.input.wheelDelta < 0) {
+            this.currentToolIdx = (this.currentToolIdx - 1 + this.tools.length) % this.tools.length;
+            tools_1.updateTools(this.tools, this.currentToolIdx);
         }
     }
     craft() {
@@ -9186,8 +9241,9 @@ class Player extends rigidbody_1.Rigidbody {
         else {
             tool.count++;
         }
+        tools_1.updateTools(this.tools, this.currentToolIdx);
     }
-    useTool() {
+    useTool(pos) {
         const chunk = global_1.Global().chunksManager.getChunkAt(this.position.toVec2());
         for (const chest of chunk.chests) {
             const dir = zogra_renderer_1.minus(chest.position, this.position).toVec2();
@@ -9197,6 +9253,23 @@ class Player extends rigidbody_1.Rigidbody {
                 this.openChest(chest);
                 return;
             }
+        }
+        const use = (tool) => {
+            tool.count--;
+            if (tool.count <= 0) {
+                this.tools = this.tools.filter(t => t !== tool);
+                this.currentToolIdx = 0;
+            }
+            tools_1.updateTools(this.tools, this.currentToolIdx);
+        };
+        const tool = this.tools[this.currentToolIdx];
+        switch (tool.type) {
+            case map_generator_1.ItemType.Paint:
+                mark_1.Mark.makeOnGround(pos);
+                use(tool);
+                break;
+            case map_generator_1.ItemType.Pickaxe:
+                break;
         }
     }
     openChest(chest) {
@@ -9429,6 +9502,7 @@ const chunk_1 = __webpack_require__(/*! ../utils/chunk */ "./src/utils/chunk.ts"
 const Noise = noisejs_1.default.Noise;
 var ItemType;
 (function (ItemType) {
+    ItemType["None"] = "none";
     ItemType["Glass"] = "glass";
     ItemType["PCB"] = "pcb";
     ItemType["Wire"] = "wire";
@@ -9443,6 +9517,7 @@ var ItemType;
     ItemType["Radio"] = "radio";
 })(ItemType = exports.ItemType || (exports.ItemType = {}));
 exports.ItemName = {
+    [ItemType.None]: "[空手]",
     [ItemType.Glass]: "玻璃",
     [ItemType.PCB]: "电子元件",
     [ItemType.Wire]: "导线",
@@ -9459,12 +9534,12 @@ exports.ItemName = {
 const ItemCount = {
     [ItemType.Paint]: 1,
     [ItemType.Wood]: 20.6,
-    [ItemType.Battery]: 0.5,
-    [ItemType.Glass]: 0.1,
-    [ItemType.Iron]: 0.2,
-    [ItemType.Petrol]: 0.1,
-    [ItemType.Wire]: 0.1,
-    [ItemType.PCB]: 0.05,
+    [ItemType.Battery]: 10,
+    [ItemType.Glass]: 10,
+    [ItemType.Iron]: 10,
+    [ItemType.Petrol]: 10,
+    [ItemType.Wire]: 10,
+    [ItemType.PCB]: 10,
 };
 const ItemAccumWeight = Object.keys(ItemCount)
     .map(item => ({
@@ -10149,17 +10224,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.craft = void 0;
 const map_generator_1 = __webpack_require__(/*! ../map/map-generator */ "./src/map/map-generator.ts");
-const $ = (selector) => document.querySelector(selector);
+const selector_1 = __webpack_require__(/*! ./selector */ "./src/ui/selector.ts");
 let UIShown = false;
 function craft(resources) {
     if (UIShown)
         return (() => __awaiter(this, void 0, void 0, function* () { return null; }))();
     UIShown = true;
     const close = () => {
-        $("#craft").style.display = "none";
+        selector_1.$("#craft").style.display = "none";
         UIShown = false;
     };
-    $("#craft").style.display = "flex";
+    selector_1.$("#craft").style.display = "flex";
     return new Promise((resolve, reject) => {
         const campfire = {
             wood: 10,
@@ -10198,17 +10273,17 @@ function craft(resources) {
                 close();
             }
         };
-        $("#craft #flashlight .button").onclick = () => {
+        selector_1.$("#craft #flashlight .button").onclick = () => {
             if (glass >= flashlight.glass && battery >= flashlight.battery && iron >= flashlight.iron) {
                 glass -= flashlight.glass;
                 battery -= flashlight.battery;
                 iron -= flashlight.iron;
                 save();
-                resolve(map_generator_1.ItemType.Campfire);
+                resolve(map_generator_1.ItemType.Flashlight);
                 close();
             }
         };
-        $("#craft #pickaxe .button").onclick = () => {
+        selector_1.$("#craft #pickaxe .button").onclick = () => {
             if (wood >= pickaxe.wood && iron >= pickaxe.iron) {
                 wood -= pickaxe.wood;
                 iron -= pickaxe.iron;
@@ -10217,7 +10292,7 @@ function craft(resources) {
                 close();
             }
         };
-        $("#craft #radio .button").onclick = () => {
+        selector_1.$("#craft #radio .button").onclick = () => {
             if (iron >= radio.iron && battery >= radio.battery && pcb >= radio.pcb) {
                 iron -= radio.iron;
                 battery -= radio.battery;
@@ -10227,7 +10302,7 @@ function craft(resources) {
                 close();
             }
         };
-        $("#craft .close").onclick = () => {
+        selector_1.$("#craft .close").onclick = () => {
             resolve(null);
             close();
         };
@@ -10265,6 +10340,55 @@ function showLog(text) {
     }, 3000);
 }
 exports.showLog = showLog;
+
+
+/***/ }),
+
+/***/ "./src/ui/selector.ts":
+/*!****************************!*\
+  !*** ./src/ui/selector.ts ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.$$ = exports.$ = void 0;
+const $ = (selector) => document.querySelector(selector);
+exports.$ = $;
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+exports.$$ = $$;
+
+
+/***/ }),
+
+/***/ "./src/ui/tools.ts":
+/*!*************************!*\
+  !*** ./src/ui/tools.ts ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateTools = void 0;
+const map_generator_1 = __webpack_require__(/*! ../map/map-generator */ "./src/map/map-generator.ts");
+const selector_1 = __webpack_require__(/*! ./selector */ "./src/ui/selector.ts");
+function updateTools(tools, activeIdx) {
+    const container = selector_1.$("#tools");
+    container.innerHTML = "";
+    tools.forEach((tool, idx) => {
+        const element = document.createElement("li");
+        element.classList.add("tool");
+        if (activeIdx == idx)
+            element.classList.add("active");
+        element.innerHTML = `<span class="name">${map_generator_1.ItemName[tool.type]}</span>x<span class="count">${tool.count}</span>`;
+        container.appendChild(element);
+    });
+}
+exports.updateTools = updateTools;
 
 
 /***/ }),

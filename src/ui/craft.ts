@@ -1,6 +1,6 @@
 import { ItemType } from "../map/map-generator";
+import { $ } from "./selector";
 
-const $ = (selector: string) => document.querySelector(selector) as HTMLDivElement;
 
 let UIShown = false;
 
@@ -69,7 +69,7 @@ export function craft(resources: Map<ItemType, number>): Promise<ItemType | null
                 battery -= flashlight.battery;
                 iron -= flashlight.iron;
                 save();
-                resolve(ItemType.Campfire);
+                resolve(ItemType.Flashlight);
                 close();
             }
         }
