@@ -1,9 +1,11 @@
+import { FakeServer } from "./fake-ws";
 import { ClientMessage, HandshakeData, JoinData, MessageType, ServerMessage, SetObject, StartData, SyncData } from "./message";
 
 export class GameSession
 {
     id: string = "";
-    socket: WebSocket;
+    // socket: WebSocket;
+    socket: FakeServer;
     name: string;
     seed: string = "seed";
     onError: (err: Error) => void = () => { };
@@ -14,7 +16,8 @@ export class GameSession
     constructor(url: string, name: string)
     {
         this.name = name;
-        this.socket = new WebSocket(url);
+        // this.socket = new WebSocket(url);
+        this.socket = new FakeServer();
         this.socket.onmessage = this.handshake.bind(this);
         this.socket.onopen = this.start.bind(this);
     }
